@@ -1,6 +1,6 @@
 import requests
 import json
-
+import os
 class SaisonHockey:
     BASE_URL = "https://statsapi.web.nhl.com/api/v1/game/{}/feed/live/"
 
@@ -37,15 +37,30 @@ class SaisonHockey:
         merged.data = self.data + autre_saison.data
         return merged
 
-def main():
-    saisons = [SaisonHockey(annee) for annee in range(2016, 2021)]
-    
-    for saison in saisons:
-        saison.fetch_data()
-        saison.save_data(f"data/data_saison_{saison.annee_debut}_{saison.annee_fin}_play_by_play.json")
+def collect_data(start = 2016, end = 2021):
+    if start > end :
+        print("Error : Start is bigger than end ...")
+        print("Ending Code ...")
+        return
 
-    total_data = sum(saisons, SaisonHockey(2016))
-    total_data.save_data("data/data_total_play_by_play.json")
+    saisons = [SaisonHockey(annee) for annee in range(start, end)]
+
+    for saison in saisons:
+        file_path = f"../ift6758/data/data_saison_{saison.annee_debut}_{saison.annee_fin}_play_by_play.json"
+        if os.path.isfile(file_path):
+            print(f"The file '{file_path}' already exists.")
+        else :
+            print(f"fetching data for {saison.annee_debut}_{saison.annee_fin} ..")
+            saison.fetch_data()
+            print(f"saving data for {saison.annee_debut}_{saison.annee_fin} ..")
+            saison.save_data(file_path)
+
+    total_data_file_path = "../ift6758/data/data_total_play_by_play.json"
+    if os.path.isfile(total_data_file_path):
+        print(f"The file '{total_data_file_path}' already exists.")
+    else :
+        total_data = sum(saisons, SaisonHockey(2016))
+        total_data.save_data(total_data_file_path)
 
 if __name__ == "__main__":
-    main()
+    collect_data()
