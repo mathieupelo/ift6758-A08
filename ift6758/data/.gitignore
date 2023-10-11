@@ -1,0 +1,14 @@
+# Fichiers Python courants
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Données
+/data/
+
+# Environnements virtuels
+venv/
+
+# NHL Data
+nhl_data/*.json 
