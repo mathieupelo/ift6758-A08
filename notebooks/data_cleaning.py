@@ -1,8 +1,23 @@
 import json
+import os
+
 import pandas as pd
 import ast
 
+import requests
+
+def remove_missing_values(df):
+	df.dropna(inplace=True)
+	return df
+
+def remove_duplicate_values(df):
+	df = df.drop_duplicates()
+	return df
+
 def create_event_df(data):
+    if os.path.isfile("../ift6758/data_clean/eventdf_clean.csv"):
+        print(f"The file ../ift6758/data_clean/eventdf_clean.csv already exists.")
+        return
     # We create an empty DataFrame
     columns = ['event', 'eventCode', 'eventTypeId', 'description', 'eventIdx', 'eventId', 'period', 'periodType',
                'ordinalNum', 'periodTime', 'periodTimeRemaining', 'dateTime', 'goalsHome', 'goalsAway']
@@ -42,9 +57,15 @@ def create_event_df(data):
                 pass
 
     event_df = pd.concat([event_df, pd.DataFrame(new_rows)], ignore_index=True)
+    event_df = remove_missing_values(event_df)
+    event_df = remove_duplicate_values(event_df)
     event_df.to_csv("../ift6758/data_clean/eventdf_clean.csv", index=False)
 
 def create_faceoff_df(data):
+    if os.path.isfile("../ift6758/data_clean/faceoffdf_clean.csv"):
+        print(f"The file ../ift6758/data_clean/faceoffdf_clean.csv already exists.")
+        return
+
     # We create an empty DataFrame
     columns = ['event']
     faceoff_df = pd.DataFrame(columns=columns)
@@ -73,14 +94,39 @@ def create_faceoff_df(data):
                                'description':description, 'dateTime': dateTime, 'period': period,
                                'periodType': periodType, 'goalsHome': goalsHome, 'goalsAway': goalsAway,
                                'winner': winner, 'loser': loser}
+
                     new_rows.append(new_row)
             except:
                 pass
 
     faceoff_df = pd.concat([faceoff_df, pd.DataFrame(new_rows)], ignore_index=True)
+    faceoff_df = remove_missing_values(faceoff_df)
+    faceoff_df = remove_duplicate_values(faceoff_df)
     faceoff_df.to_csv("../ift6758/data_clean/faceoffdf_clean.csv", index=False)
 
-def create_player_df(data):
+def fetch_player_info(link):
+    BASE_URL = 'https://statsapi.web.nhl.com'
+    url = BASE_URL + link
+    response = requests.get(url)
+    if response.status_code == 200:
+        print("Response Received...")
+        print(response)
+
+        # Or access the response content as JSON (if it's JSON)
+        json_data = response.json()
+
+        birthDate = json_data['people'][0]['id']
+        height = json_data['people'][0]['height']
+        weight = json_data['people'][0]['weight']
+        primaryPositionCode = json_data['people'][0]['primaryPosition']['code']
+        primaryPositionName = json_data['people'][0]['primaryPosition']['name']
+
+        return birthDate, height, weight, primaryPositionCode, primaryPositionName
+
+def create_player_df(data, fetch_info=0):
+    if os.path.isfile("../ift6758/data_clean/playerdf_clean.csv"):
+        print(f"The file ../ift6758/data_clean/playerdf_clean.csv already exists.")
+        return
     # We create an empty DataFrame
     columns = ['playerid', 'fullName', 'link']
     player_df = pd.DataFrame(columns=columns)
@@ -97,14 +143,21 @@ def create_player_df(data):
                     playerid = player['player']['id']
                     fullName = player['player']['fullName']
                     link = player['player']['link']
+                    if fetch_info == 1:
+                        birthDate, height, weight, primaryPositionCode, primaryPositionName = fetch_player_info(link)
 
-                    new_row = {'playerid': playerid, 'fullName' : fullName, 'link': link}
+                        new_row = {'playerid': playerid, 'fullName' : fullName, 'link': link,
+                                   'birthDate': birthDate, 'height': height, 'weight': weight,
+                                   'primaryPositionCode': primaryPositionCode, 'primaryPositionName': primaryPositionName}
+                    else:
+                        new_row = {'playerid': playerid, 'fullName': fullName, 'link': link}
                     new_rows.append(new_row)
             except:
                 pass
 
     player_df = pd.concat([player_df, pd.DataFrame(new_rows)], ignore_index=True)
-    player_df = player_df.drop_duplicates()
+    player_df = remove_missing_values(player_df)
+    player_df = remove_duplicate_values(player_df)
     player_df.to_csv("../ift6758/data_clean/playerdf_clean.csv", index=False)
 
 
