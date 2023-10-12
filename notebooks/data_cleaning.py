@@ -161,7 +161,7 @@ def create_player_df(data, fetch_info=0):
     player_df.to_csv("../ift6758/data_clean/playerdf_clean.csv", index=False)
 
 
-def create_shoot_df(data, fetch_info=0):
+def create_shoot_df(data):
     if os.path.isfile("../ift6758/data_clean/shootdf_clean.csv"):
         print(f"The file ../ift6758/data_clean/shootdf_clean.csv already exists.")
         return
@@ -207,8 +207,57 @@ def create_shoot_df(data, fetch_info=0):
     shoot_df = remove_duplicate_values(shoot_df)
     shoot_df.to_csv("../ift6758/data_clean/shootdf_clean.csv", index=False)
 
+def create_takeaway_df(data):
+    if os.path.isfile("../ift6758/data_clean/takeawaydf_clean.csv"):
+        print(f"The file ../ift6758/data_clean/takeawaydf_clean.csv already exists.")
+        return
+    # We create an empty DataFrame
+    columns = []
+    takeaway_df = pd.DataFrame(columns=columns)
 
-def main():
+    # We create new entries
+    # new_row = {'Column1': 'Value1', 'Column2': 'Value2'}
+
+    new_rows = []
+    # for every entry in df
+    for entry in data:
+        for line in data[entry]:
+            try:
+                if line["result"]["eventTypeId"] == "TAKEAWAY":
+                    event = line['result']['event']
+                    eventCode = line['result']['eventCode']
+                    eventTypeId = line['result']['eventTypeId']
+                    description = line['result']['description']
+
+
+                    dateTime = line['about']['dateTime']
+                    period = line['about']['period']
+                    periodType = line['about']['periodType']
+                    periodTime = line['about']['periodTime']
+                    periodTimeRemaining = line['about']['periodTimeRemaining']
+                    goalsHome = line['about']['goals']['home']
+                    goalsAway = line['about']['goals']['away']
+                    coordinateX = line['coordinates']['x']
+                    coordinateY = line['coordinates']['y']
+
+
+                    new_row = {'event': event, 'eventCode': eventCode, 'eventTypeId': eventTypeId,
+                               'description': description, 'dateTime': dateTime, 'period': period,
+                               'periodType': periodType, 'periodTime': periodTime, 'periodTimeRemaining': periodTimeRemaining,
+                               'goalsHome': goalsHome, 'goalsAway': goalsAway, 'coordinateX': coordinateX,
+                               'coordinateY': coordinateY }
+
+                    new_rows.append(new_row)
+            except:
+                pass
+
+    takeaway_df = pd.concat([takeaway_df, pd.DataFrame(new_rows)], ignore_index=True)
+    takeaway_df = remove_missing_values(takeaway_df)
+    takeaway_df = remove_duplicate_values(takeaway_df)
+    takeaway_df.to_csv("../ift6758/data_clean/takeawaydf_clean.csv", index=False)
+
+
+def clean_data():
 
     print("READING JSON")
     json_path = "../ift6758/data/data_total_play_by_play.json"
@@ -219,6 +268,7 @@ def main():
     create_faceoff_df(data)
     create_player_df(data)
     create_shoot_df(data)
+    create_takeaway_df(data)
 
 if __name__ == "__main__":
-    main()
+    clean_data()
