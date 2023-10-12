@@ -1,19 +1,11 @@
 import json
-
 import pandas as pd
 import ast
 
-
-
-def main():
-
-    print("READING JSON")
-    json_path = "../ift6758/data/data_total_play_by_play.json"
-
-    df = pd.read_json(json_path)
-
+def create_event_df(data):
     # We create an empty DataFrame
-    columns = ['event', 'eventCode','eventTypeId','description','eventIdx','eventId','period', 'periodType', 'ordinalNum', 'periodTime', 'periodTimeRemaining', 'dateTime', 'goalsHome', 'goalsAway']
+    columns = ['event', 'eventCode', 'eventTypeId', 'description', 'eventIdx', 'eventId', 'period', 'periodType',
+               'ordinalNum', 'periodTime', 'periodTimeRemaining', 'dateTime', 'goalsHome', 'goalsAway']
     event_df = pd.DataFrame(columns=columns)
 
     # We create new entries
@@ -21,11 +13,11 @@ def main():
 
     new_rows = []
     # for every entry in df
-    for entry in df:
-        for line in df[entry]:
+    for entry in data:
+        for line in data[entry]:
             try:
                 event = line['result']['event']
-                eventCode  = line['result']['eventCode']
+                eventCode = line['result']['eventCode']
                 eventTypeId = line['result']['eventTypeId']
                 description = line['result']['description']
                 eventIdx = line['about']['eventIdx']
@@ -40,10 +32,10 @@ def main():
                 goalsAway = line['about']['goals']['away']
 
                 new_row = {'event': event, 'eventCode': eventCode, 'eventTypeId': eventTypeId,
-                           'description': description, 'eventIdx':eventIdx, 'eventId':eventId,
-                           'period':period,'periodType':periodType,'ordinalNum':ordinalNum,
-                           'periodTime':periodTime, 'periodTimeRemaining':periodTimeRemaining,
-                           'dateTime':dateTime, 'goalsHome':goalsHome, 'goalsAway': goalsAway
+                           'description': description, 'eventIdx': eventIdx, 'eventId': eventId,
+                           'period': period, 'periodType': periodType, 'ordinalNum': ordinalNum,
+                           'periodTime': periodTime, 'periodTimeRemaining': periodTimeRemaining,
+                           'dateTime': dateTime, 'goalsHome': goalsHome, 'goalsAway': goalsAway
                            }
                 new_rows.append(new_row)
             except:
@@ -52,7 +44,16 @@ def main():
     event_df = pd.concat([event_df, pd.DataFrame(new_rows)], ignore_index=True)
 
     print(event_df)
-    event_df.to_csv("../ift6758/data/data_clean/eventdf_clean.csv", index=False)
+    event_df.to_csv("../ift6758/data_clean/eventdf_clean.csv", index=False)
+
+
+def main():
+
+    print("READING JSON")
+    json_path = "../ift6758/data/data_total_play_by_play.json"
+
+    data = pd.read_json(json_path)
+    create_event_df(data)
 
     """
 
