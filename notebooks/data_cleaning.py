@@ -80,6 +80,35 @@ def create_faceoff_df(data):
     faceoff_df = pd.concat([faceoff_df, pd.DataFrame(new_rows)], ignore_index=True)
     faceoff_df.to_csv("../ift6758/data_clean/faceoffdf_clean.csv", index=False)
 
+def create_player_df(data):
+    # We create an empty DataFrame
+    columns = ['playerid', 'fullName', 'link']
+    player_df = pd.DataFrame(columns=columns)
+
+    # We create new entries
+    # new_row = {'Column1': 'Value1', 'Column2': 'Value2'}
+
+    new_rows = []
+    # for every entry in df
+    for entry in data:
+        for line in data[entry]:
+            try:
+                for player in line['players']:
+                    playerid = player['player']['id']
+                    fullName = player['player']['fullName']
+                    link = player['player']['link']
+
+                    new_row = {'playerid': playerid, 'fullName' : fullName, 'link': link}
+                    new_rows.append(new_row)
+            except:
+                pass
+
+    player_df = pd.concat([player_df, pd.DataFrame(new_rows)], ignore_index=True)
+    player_df = player_df.drop_duplicates()
+    player_df.to_csv("../ift6758/data_clean/playerdf_clean.csv", index=False)
+
+
+
 def main():
 
     print("READING JSON")
@@ -89,20 +118,7 @@ def main():
 
     create_event_df(data)
     create_faceoff_df(data)
-
-
-    """
-
-    def create_faceoff_table(data):
-        print("FACEOFF TABLE")
-        faceoff_data = []
-        for event in data[0]:
-            if event["result"]["eventTypeId"] == "FACEOFF":
-                print(event["result"])
-
-    create_faceoff_table(df)
-    #df.tocsv("/data_clean/")
-    """
+    create_player_df(data)
 
 if __name__ == "__main__":
     main()
