@@ -161,6 +161,52 @@ def create_player_df(data, fetch_info=0):
     player_df.to_csv("../ift6758/data_clean/playerdf_clean.csv", index=False)
 
 
+def create_shoot_df(data, fetch_info=0):
+    if os.path.isfile("../ift6758/data_clean/shootdf_clean.csv"):
+        print(f"The file ../ift6758/data_clean/shootdf_clean.csv already exists.")
+        return
+    # We create an empty DataFrame
+    columns = []
+    shoot_df = pd.DataFrame(columns=columns)
+
+    # We create new entries
+    # new_row = {'Column1': 'Value1', 'Column2': 'Value2'}
+
+    new_rows = []
+    # for every entry in df
+    for entry in data:
+        for line in data[entry]:
+            try:
+                if line["result"]["eventTypeId"] == "SHOT":
+                    event = line['result']['event']
+                    eventCode = line['result']['eventCode']
+                    eventTypeId = line['result']['eventTypeId']
+                    description = line['result']['description']
+                    secondaryType = line['result']['secondaryType']
+
+                    dateTime = line['about']['dateTime']
+                    period = line['about']['period']
+                    periodType = line['about']['periodType']
+                    periodTime = line['about']['periodTime']
+                    periodTimeRemaining = line['about']['periodTimeRemaining']
+                    goalsHome = line['about']['goals']['home']
+                    goalsAway = line['about']['goals']['away']
+
+                    new_row = {'event': event, 'eventCode': eventCode, 'eventTypeId': eventTypeId,
+                               'description': description, 'secondaryType': secondaryType,
+                               'dateTime': dateTime, 'period': period, 'periodType': periodType,
+                               'periodTime': periodTime, 'periodTimeRemaining': periodTimeRemaining,
+                               'goalsHome': goalsHome, 'goalsAway': goalsAway}
+
+                    new_rows.append(new_row)
+            except:
+                pass
+
+    shoot_df = pd.concat([shoot_df, pd.DataFrame(new_rows)], ignore_index=True)
+    shoot_df = remove_missing_values(shoot_df)
+    shoot_df = remove_duplicate_values(shoot_df)
+    shoot_df.to_csv("../ift6758/data_clean/shootdf_clean.csv", index=False)
+
 
 def main():
 
@@ -172,6 +218,7 @@ def main():
     create_event_df(data)
     create_faceoff_df(data)
     create_player_df(data)
+    create_shoot_df(data)
 
 if __name__ == "__main__":
     main()
