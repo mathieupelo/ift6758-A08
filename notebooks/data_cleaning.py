@@ -1,44 +1,71 @@
+import json
+
 import pandas as pd
 import ast
 
 
 
 def main():
+
     print("READING JSON")
-    json_path = "../ift6758/data_clean/data_saison_2016_2017_play_by_play.json"
+    json_path = "../ift6758/data/data_total_play_by_play.json"
+
     df = pd.read_json(json_path)
-    print(df)
 
-    df['event'] = df[0].apply(lambda x: x['result']['event'])
-    df['eventCode'] = df[0].apply(lambda x: x['result']['eventCode'])
-    df['eventTypeId'] = df[0].apply(lambda x: x['result']['eventTypeId'])
-    df['description'] = df[0].apply(lambda x: x['result']['description'])
+    # We create an empty DataFrame
+    columns = ['event', 'eventCode','eventTypeId','description','eventIdx','eventId','period', 'periodType', 'ordinalNum', 'periodTime', 'periodTimeRemaining', 'dateTime', 'goalsHome', 'goalsAway']
+    event_df = pd.DataFrame(columns=columns)
 
-    df["eventIdx"] = df[0].apply(lambda x: x["about"]["eventIdx"])
-    df["eventId"] = df[0].apply(lambda x: x["about"]["eventId"])
+    # We create new entries
+    # new_row = {'Column1': 'Value1', 'Column2': 'Value2'}
 
-    df['period'] = df[0].apply(lambda x: x['about']['period'])
-    df['periodType'] = df[0].apply(lambda x: x['about']['periodType'])
+    new_rows = []
+    # for every entry in df
+    for entry in df:
+        for line in df[entry]:
+            try:
+                event = line['result']['event']
+                eventCode  = line['result']['eventCode']
+                eventTypeId = line['result']['eventTypeId']
+                description = line['result']['description']
+                eventIdx = line['about']['eventIdx']
+                eventId = line['about']['eventId']
+                period = line['about']['period']
+                periodType = line['about']['periodType']
+                ordinalNum = line['about']['ordinalNum']
+                periodTime = line['about']['periodTime']
+                periodTimeRemaining = line['about']['periodTimeRemaining']
+                dateTime = line['about']['dateTime']
+                goalsHome = line['about']['goals']['home']
+                goalsAway = line['about']['goals']['away']
 
-    df['ordinalNum'] = df[0].apply(lambda x: x['about']['ordinalNum'])
+                new_row = {'event': event, 'eventCode': eventCode, 'eventTypeId': eventTypeId,
+                           'description': description, 'eventIdx':eventIdx, 'eventId':eventId,
+                           'period':period,'periodType':periodType,'ordinalNum':ordinalNum,
+                           'periodTime':periodTime, 'periodTimeRemaining':periodTimeRemaining,
+                           'dateTime':dateTime, 'goalsHome':goalsHome, 'goalsAway': goalsAway
+                           }
+                new_rows.append(new_row)
+            except:
+                pass
 
-    df['periodTime'] = df[0].apply(lambda x: x['about']['periodTime'])
-    df['periodTimeRemaining'] = df[0].apply(lambda x: x['about']['periodTimeRemaining'])
-    df['dateTime'] = df[0].apply(lambda x: x['about']['dateTime'])
-    df['goals_away'] = df[0].apply(lambda x: x['about']['goals']['away'])
-    df['goals_home'] = df[0].apply(lambda x: x['about']['goals']['home'])
+    event_df = pd.concat([event_df, pd.DataFrame(new_rows)], ignore_index=True)
 
-    #df['coordinatesX'] = df[0].apply(lambda x: x['coordinates']['x'])
-    #df['coordinatesY'] = df[0].apply(lambda x: x['coordinates']['y'])
+    print(event_df)
+    event_df.to_csv("../ift6758/data/data_clean/eventdf_clean.csv", index=False)
 
+    """
 
-    df = df[['event', 'eventCode', 'eventTypeId', 'description', 'eventIdx', 'eventId','period', 'periodType', 'periodTime',
-             'periodTimeRemaining', 'dateTime', 'goals_away', 'goals_home']]
-    print(df.columns)
-    print(df)
+    def create_faceoff_table(data):
+        print("FACEOFF TABLE")
+        faceoff_data = []
+        for event in data[0]:
+            if event["result"]["eventTypeId"] == "FACEOFF":
+                print(event["result"])
 
-    df.tocsv("/data_clean/")
-
+    create_faceoff_table(df)
+    #df.tocsv("/data_clean/")
+    """
 
 if __name__ == "__main__":
     main()
