@@ -1,6 +1,9 @@
 import requests
 import json
 import os
+import threading
+import time
+import pandas as pd
 
 class SaisonHockey:
     BASE_URL = "https://statsapi.web.nhl.com/api/v1/game/{}/feed/live/"
@@ -9,6 +12,7 @@ class SaisonHockey:
         self.annee_debut = annee_debut
         self.annee_fin = annee_debut + 1
         self.data = []
+        self.lock = threading.Lock()  # Ajout du verrou
         
     def game_ids(self):
         """ Retourne les GAME_ID des données play-by-play de la LNH pour la saison régulière et les séries 
@@ -33,36 +37,51 @@ class SaisonHockey:
                 for round_num in range(1, 5):  # 4 rounds
                     for matchup in range(1, 9):  # 8 matchups maximum
                         for game in range(1, 8):  # 7 games maximum
-                            ids.append(f"{self.annee_debut}{typ}0{round_num}{matchup}{game}")
+                            ids.append(f"{self.annee_debut}{typ}{game}{matchup}{round_num}0")
+        return ids
+
 
     def fetch_data(self):
-        """ Récupère les données play-by-play de chaque jeu pour la saison spécifiée lors de l'initialisation 
-            de l'instance. 
-        
-        Les données sont récupérées depuis l'API de la LNH en utilisant l'URL de base stockée dans BASE_URL. 
-        Pour chaque identifiant de jeu généré par la méthode game_ids, la fonction effectue une requête GET 
-        pour obtenir les données. Si la requête est réussie (code de statut 200), les données play-by-play 
-        sont extraites du JSON et ajoutées à l'attribut 'data' de l'instance.
-        
-        :rtype: None
-        """
-        for game_id in self.game_ids():
-            response = requests.get(self.BASE_URL.format(game_id))
-            if response.status_code == 200:
-                game_data = response.json() 
-                play_by_play_data = game_data.get('liveData', {}).get('plays', {}).get('allPlays', [])
-                self.data.append(play_by_play_data)
+        MAX_THREADS = 10
+        game_ids = self.game_ids()
+        threads = []
+        for game_id in game_ids:
+            if len(threads) >= MAX_THREADS:
+                for thread in threads:
+                    thread.join()
+                threads = []
+            thread = threading.Thread(target=self._fetch_single_game_data, args=(game_id,))
+            thread.start()
+            threads.append(thread)
 
-    def save_data(self, path):
-        """ Enregistre les données play-by-play stockées dans l'attribut 'data' de l'instance 
-            sous forme de fichier JSON.
+        for thread in threads:
+            thread.join()
 
-        :param path: Chemin du fichier dans lequel les données seront enregistrées.
-        :type path: str
-        :rtype: None
-        """
-        with open(path, 'w') as f:
-            json.dump(self.data, f)
+    def _fetch_single_game_data(self, game_id):
+        for _ in range(3):  # Essayez 3 fois
+            try:
+                response = requests.get(self.BASE_URL.format(game_id))
+                if response.status_code == 200:
+                    game_data = response.json()
+                    play_by_play_data = game_data.get('liveData', {}).get('plays', {}).get('allPlays', [])
+                    with self.lock:
+                        self.data.append({"gameID": game_id, "data": play_by_play_data})
+                break
+            except requests.exceptions.RequestException:
+                time.sleep(5)
+
+    def save_data(self, base_path):
+        if not os.path.exists(base_path):
+            os.makedirs(base_path)
+
+        dfs = []  # Pour stocker chaque DataFrame temporaire
+        for game in self.data:
+            game_id = game["gameID"]
+            game_data = game["data"]
+            game_path = f"{base_path}/{game_id}.json"
+            with open(game_path, 'w') as f:
+                json.dump(game_data, f, indent=4)
+
 
     def __add__(self, autre_saison):
         """ Fusionne les données de deux saisons et renvoie une nouvelle instance de SaisonHockey  
@@ -99,7 +118,7 @@ def collect_data(start=2016, end=2021):
     # Pour chaque objet saison dans la liste des saisons:
     for saison in saisons:
         # Construit le chemin du fichier de données pour la saison en cours.
-        file_path = f"../ift6758/data/data_saison_{saison.annee_debut}_{saison.annee_fin}_play_by_play.json"
+        file_path = f"C:/Users/lebou/Desktop/Cours_Canada/Data_science_IFT6758/project_nhl_data/ift6758-A08-1/ift6758/data/nhl_data/{saison.annee_debut}_{saison.annee_fin}"
         
         # Vérifie si un fichier pour la saison en cours existe déjà.
         if os.path.isfile(file_path):
@@ -110,18 +129,7 @@ def collect_data(start=2016, end=2021):
             saison.fetch_data()
             print(f"saving data for {saison.annee_debut}_{saison.annee_fin} ..")
             saison.save_data(file_path)
-
-    # Construit le chemin du fichier pour sauvegarder toutes les données combinées.
-    total_data_file_path = "../ift6758/data/data_total_play_by_play.json"
-    
-    # Vérifie si un fichier pour les données combinées existe déjà.
-    if os.path.isfile(total_data_file_path):
-        print(f"The file '{total_data_file_path}' already exists.")
-    else:
-        # Si non, combine toutes les données des saisons et sauvegarde dans le fichier.
-        total_data = sum(saisons, SaisonHockey(2016))
-        total_data.save_data(total_data_file_path)
-
+            
 # Exécute la fonction collect_data si ce script est exécuté en tant que programme principal.
 if __name__ == "__main__":
     collect_data()
