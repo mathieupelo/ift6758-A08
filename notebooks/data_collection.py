@@ -30,7 +30,7 @@ class SaisonHockey:
 
     def save_data(self, path):
         with open(path, 'w') as f:
-            json.dump(self.data, f)
+            json.dump(self.data, f, indent=4)
 
     def __add__(self, autre_saison):
         merged = SaisonHockey(self.annee_debut)
