@@ -4,14 +4,22 @@ import os
 import threading
 import time
 import pandas as pd
+from tqdm import tqdm
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 class SaisonHockey:
     BASE_URL = "https://statsapi.web.nhl.com/api/v1/game/{}/feed/live/"
 
+    """ Initialise une nouvelle saison de hockey.
+
+    :param annee_debut: L'année de début de la saison de hockey.
+    :type annee_debut: int
+    """
     def __init__(self, annee_debut):
         self.annee_debut = annee_debut
         self.annee_fin = annee_debut + 1
-        self.data = []
+        self.data = [] # Stocke les données de la saison
         self.lock = threading.Lock()  # Ajout du verrou
         
     def game_ids(self):
@@ -34,54 +42,84 @@ class SaisonHockey:
                     ids.append(f"{self.annee_debut}{typ}{game_num:04}")
             # Générer les identifiants pour les séries éliminatoires
             else:
-                for round_num in range(1, 5):  # 4 rounds
-                    for matchup in range(1, 9):  # 8 matchups maximum
-                        for game in range(1, 8):  # 7 games maximum
-                            ids.append(f"{self.annee_debut}{typ}{game}{matchup}{round_num}0")
+                # huitième de final
+                ids.extend([f"{self.annee_debut}{typ}01{matchup}{game}" for matchup in range(1, 9) for game in range(1, 8)])
+                # quart de final
+                ids.extend([f"{self.annee_debut}{typ}02{matchup}{game}" for matchup in range(1, 5) for game in range(1, 8)])
+                # demi final
+                ids.extend([f"{self.annee_debut}{typ}03{matchup}{game}" for matchup in range(1, 3) for game in range(1, 8)])
+                # final
+                ids.extend([f"{self.annee_debut}{typ}04{1}{game}" for game in range(1, 8)])
         return ids
 
 
     def fetch_data(self):
-        MAX_THREADS = 10
-        game_ids = self.game_ids()
+        """ Télécharge les données des jeux pour la saison.
+
+        Utilise des threads pour accélérer le téléchargement.
+        """
+        MAX_THREADS = 10  # Nombre maximal de threads
+        game_ids = self.game_ids()  # Récupère les IDs de jeu pour la saison
         threads = []
-        for game_id in game_ids:
+
+        # Boucle sur chaque ID de jeu pour le télécharger
+        for game_id in tqdm(game_ids, total=len(game_ids), desc=f"Fetching game data for {self.annee_debut}-{self.annee_fin} Season"):
+            # Si le nombre maximum de threads est atteint, attendez que tous les threads se terminent
             if len(threads) >= MAX_THREADS:
                 for thread in threads:
                     thread.join()
                 threads = []
+            
+            # Crée un nouveau thread pour télécharger les données de ce jeu
             thread = threading.Thread(target=self._fetch_single_game_data, args=(game_id,))
             thread.start()
             threads.append(thread)
 
+        # Attends que tous les threads se terminent
         for thread in threads:
             thread.join()
 
+
     def _fetch_single_game_data(self, game_id):
+        # Chemin où le fichier JSON pour ce game_id serait sauvegardé
+        saison_folder = f"../nhl_data/{self.annee_debut}_{self.annee_fin}"
+        json_file_path = f"{saison_folder}/{game_id}.json"
+        
+        # Vérifie si le fichier JSON existe déjà
+        if os.path.exists(json_file_path):
+            print(f"Le fichier {json_file_path} existe déjà, saut de la récupération de données.")
+            return
+        # Si le fichier n'existe pas, procédez à la récupération des données
         for _ in range(3):  # Essayez 3 fois
             try:
                 response = requests.get(self.BASE_URL.format(game_id))
                 if response.status_code == 200:
                     game_data = response.json()
-                    play_by_play_data = game_data.get('liveData', {}).get('plays', {}).get('allPlays', [])
                     with self.lock:
-                        self.data.append({"gameID": game_id, "data": play_by_play_data})
+                        self.data.append({"gameID": game_id, "data": game_data})
                 break
             except requests.exceptions.RequestException:
                 time.sleep(5)
 
     def save_data(self, base_path):
+        """ Enregistre les données téléchargées dans des fichiers JSON.
+
+        :param base_path: Le chemin de base où enregistrer les fichiers.
+        :type base_path: str
+        """
+        # Crée le dossier s'il n'existe pas
         if not os.path.exists(base_path):
             os.makedirs(base_path)
 
-        dfs = []  # Pour stocker chaque DataFrame temporaire
+        # Enregistre chaque jeu dans un fichier JSON distinct
         for game in self.data:
             game_id = game["gameID"]
             game_data = game["data"]
             game_path = f"{base_path}/{game_id}.json"
-            with open(game_path, 'w') as f:
-                json.dump(game_data, f, indent=4)
 
+            if not os.path.exists(game_path):
+                with open(game_path, 'w') as f:
+                    json.dump(game_data, f, indent=4)
 
     def __add__(self, autre_saison):
         """ Fusionne les données de deux saisons et renvoie une nouvelle instance de SaisonHockey  
@@ -118,17 +156,18 @@ def collect_data(start=2016, end=2021):
     # Pour chaque objet saison dans la liste des saisons:
     for saison in saisons:
         # Construit le chemin du fichier de données pour la saison en cours.
-        file_path = f"C:/Users/lebou/Desktop/Cours_Canada/Data_science_IFT6758/project_nhl_data/ift6758-A08-1/ift6758/data/nhl_data/{saison.annee_debut}_{saison.annee_fin}"
+        file_path = f"../nhl_data/{saison.annee_debut}_{saison.annee_fin}"
         
-        # Vérifie si un fichier pour la saison en cours existe déjà.
-        if os.path.isfile(file_path):
-            print(f"The file '{file_path}' already exists.")
+        # Vérifie si un dossier pour la saison en cours existe déjà.
+        if os.path.exists(file_path):
+            print(f"The folder '{file_path}' already exists.")
         else:
-            # Si non, récupère les données et sauvegarde dans le fichier.
+            os.makedirs(file_path)
             print(f"fetching data for {saison.annee_debut}_{saison.annee_fin} ..")
             saison.fetch_data()
             print(f"saving data for {saison.annee_debut}_{saison.annee_fin} ..")
             saison.save_data(file_path)
+
             
 # Exécute la fonction collect_data si ce script est exécuté en tant que programme principal.
 if __name__ == "__main__":
