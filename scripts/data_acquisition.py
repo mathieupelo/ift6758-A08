@@ -6,8 +6,6 @@ import time
 import pandas as pd
 from tqdm import tqdm
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
 class SaisonHockey:
     BASE_URL = "https://statsapi.web.nhl.com/api/v1/game/{}/feed/live/"
 
@@ -82,7 +80,7 @@ class SaisonHockey:
 
     def _fetch_single_game_data(self, game_id):
         # Chemin où le fichier JSON pour ce game_id serait sauvegardé
-        saison_folder = f"../nhl_data/{self.annee_debut}_{self.annee_fin}"
+        saison_folder = f"../data/raw/{self.annee_debut}_{self.annee_fin}"
         json_file_path = f"{saison_folder}/{game_id}.json"
         
         # Vérifie si le fichier JSON existe déjà
@@ -121,6 +119,7 @@ class SaisonHockey:
                 with open(game_path, 'w') as f:
                     json.dump(game_data, f, indent=4)
 
+
     def __add__(self, autre_saison):
         """ Fusionne les données de deux saisons et renvoie une nouvelle instance de SaisonHockey  
             avec les données fusionnées.
@@ -156,7 +155,7 @@ def collect_data(start=2016, end=2021):
     # Pour chaque objet saison dans la liste des saisons:
     for saison in saisons:
         # Construit le chemin du fichier de données pour la saison en cours.
-        file_path = f"../nhl_data/{saison.annee_debut}_{saison.annee_fin}"
+        file_path = f"../data/raw/{saison.annee_debut}_{saison.annee_fin}"
         
         # Vérifie si un dossier pour la saison en cours existe déjà.
         if os.path.exists(file_path):

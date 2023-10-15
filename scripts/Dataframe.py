@@ -3,8 +3,6 @@ import json
 import pandas as pd
 from tqdm import tqdm
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
 def load_all_seasons(base_path):
     all_data = {}
     csv_path = 'all_seasons_data.csv'
@@ -104,14 +102,5 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
                 raise ValueError("Shooter count and goalie count do not match")
     
     output_df = pd.DataFrame(temp_data)
-    output_df.to_csv('transformed_event_data.csv', index=False)
+    output_df.to_csv('../data/derivatives/dataframe.csv', index=False)
     return output_df
-
-base_path = '../data/nhl_data/'
-df = load_all_seasons(base_path)
-transformed_df = transformEventData(df)
-
-
-
-
-
