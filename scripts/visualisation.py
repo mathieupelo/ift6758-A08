@@ -26,7 +26,7 @@ def shots_goals (data : pd.DataFrame, saison: int):
 
 
 def Distance_goals (data : pd.DataFrame, saison: int):
-    df = data[(data['goalFlag'] == True) & (data['gameId']//1000000 == saison)]
+    df = data[(data['goalFlag'] == True) & (data['gameId']//1000000 == saison)].copy()
     df['distance'] = np.sqrt((90-np.absolute(df['coord_x'])).pow(2) + df['coord_y'].pow(2))
     probability=[]
     x=[]
@@ -49,10 +49,10 @@ def Distance_goals (data : pd.DataFrame, saison: int):
 
 
 def Distance_goals_shots (data : pd.DataFrame, saison: int):
-    df = data[(data['goalFlag'] == True) & (data['gameId']//1000000 == saison)]
+    df = data[(data['goalFlag'] == True) & (data['gameId']//1000000 == saison)].copy()
     df['distance'] = np.sqrt((90-np.absolute(df['coord_x'])).pow(2) + df['coord_y'].pow(2))
     
-    for tir in data_1['shotCategory'].dropna().unique():
+    for tir in data['shotCategory'].dropna().unique():
         probability_tir=[]
         x=[]
         for i in range(0,110,5):
@@ -76,7 +76,7 @@ def Offensive_coords(data_1:pd.DataFrame):
       df= pd.DataFrame()
       dire = data_1[data_1['gameId']== gameid].reset_index().loc[0,'homeRinkSide']
       for i in range (1,5):
-          df1=data_1[(data_1['gameId']== gameid) & (data_1['prd']== i)]
+          df1=data_1[(data_1['gameId']== gameid) & (data_1['prd']== i)].copy()
           if dire == 'left':
                 if i % 2 != 0:
                 
