@@ -6,18 +6,19 @@ import matplotlib.pyplot as plt
 def shots_goals (data : pd.DataFrame, saison: int):
     df = data[(data['gameId']//1000000)== saison]
     result = df.groupby(['shotCategory','goalFlag']).size().unstack(fill_value=0)
-    result['Efficacité']=np.round(result[True]/result[False]*100,2)
+    result['Total']=result[False]+result[True]
+    result['Efficacité']=np.round(result[True]/result['Total']*100,2)
     largeur_barre = 0.45
     indice = np.arange(len(result.index))
     plt.figure(figsize=(10, 6))
-    plt.bar(indice, 100, largeur_barre, label='MISSED SHOTS')
-    plt.bar(indice, result["Efficacité"], largeur_barre, label='GOALS')
+    plt.bar(indice, result['Total'], largeur_barre, label='TOTAL SHOTS')
+    plt.bar(indice, result[True], largeur_barre, label='GOALS')
     plt.xlabel('Types de tirs')
+    plt.ylabel('Nombre de tirs')
     plt.title(f'Buts par types de tirs {saison}/{saison+1}')
     plt.xticks(indice, result.index)
     for i in range(len(result.index)):
-        plt.text(indice[i], (result['Efficacité'][i] / 2)-1.5, f'{result["Efficacité"][i]:.2f}%', ha='center', va='center', color='white')
-        plt.text(indice[i], result['Efficacité'][i] / 2, f'({result[True][i]})', ha='center', va='bottom', color='white')
+        plt.text(indice[i], (result['Total'][i])+500, f'{result["Efficacité"][i]:.2f}%', ha='center', va='center', color='black')
     plt.legend()
 
     plt.tight_layout()
