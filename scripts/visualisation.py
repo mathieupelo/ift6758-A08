@@ -14,7 +14,6 @@ def shots_goals (data : pd.DataFrame, saison: int, log: bool):
     plt.bar(indice, result['Total'], largeur_barre, label='TOTAL SHOTS')
     plt.bar(indice, result[True], largeur_barre, label='GOALS')
     plt.xlabel('Types de tirs')
-    plt.ylabel('Nombre de tirs')
     if log:
         plt.yscale('log')
     plt.title(f'Buts par types de tirs {saison}/{saison+1}')
