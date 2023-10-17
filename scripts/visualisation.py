@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def shots_goals (data : pd.DataFrame, saison: int):
+def shots_goals (data : pd.DataFrame, saison: int, log: bool):
     df = data[(data['gameId']//1000000)== saison]
     result = df.groupby(['shotCategory','goalFlag']).size().unstack(fill_value=0)
     result['Total']=result[False]+result[True]
@@ -15,10 +15,12 @@ def shots_goals (data : pd.DataFrame, saison: int):
     plt.bar(indice, result[True], largeur_barre, label='GOALS')
     plt.xlabel('Types de tirs')
     plt.ylabel('Nombre de tirs')
+    if log:
+        plt.yscale('log')
     plt.title(f'Buts par types de tirs {saison}/{saison+1}')
     plt.xticks(indice, result.index)
     for i in range(len(result.index)):
-        plt.text(indice[i], (result['Total'][i])+500, f'{result["Efficacité"][i]:.2f}%', ha='center', va='center', color='black')
+        plt.text(indice[i], (result['Total'][i]), f'{result["Efficacité"][i]:.2f}%', ha='center', va='center', color='black')
     plt.legend()
 
     plt.tight_layout()
