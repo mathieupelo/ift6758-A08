@@ -26,7 +26,6 @@ def shots_goals (data : pd.DataFrame, saison: int, log: bool):
     plt.show()
 
 
-
 def Distance_goals (data : pd.DataFrame, saison: int):
     df = data[(data['goalFlag'] == True) & (data['gameId']//1000000 == saison)].copy()
     df['distance'] = np.sqrt((90-np.absolute(df['coord_x'])).pow(2) + df['coord_y'].pow(2))
@@ -82,18 +81,18 @@ def Offensive_coords(data_1:pd.DataFrame):
           if dire == 'left':
                 if i % 2 != 0:
                 
-                   df1['new_x']= df1.apply(lambda row: row['coord_x'] if row['hostTeam']==row['team'] else (-1)*row['coord_x'], axis=1)
+                   df1['new_x']= df1.apply(lambda row: 90 - row['coord_x'] if row['hostTeam']==row['team'] else 90 + row['coord_x'], axis=1)
                    df1['new_y']= df1.apply(lambda row: row['coord_y'] if row['hostTeam']==row['team'] else (-1)*row['coord_y'], axis=1)
                 else:
-                   df1['new_x']= df1.apply(lambda row: row['coord_x'] if row['hostTeam']!=row['team'] else (-1)*row['coord_x'], axis=1) 
+                   df1['new_x']= df1.apply(lambda row: 90 - row['coord_x'] if row['hostTeam']!=row['team'] else 90 + row['coord_x'], axis=1) 
                    df1['new_y']= df1.apply(lambda row: row['coord_y'] if row['hostTeam']!=row['team'] else (-1)*row['coord_y'], axis=1)        
           else:
                 if i % 2 != 0:
                 
-                   df1['new_x']= df1.apply(lambda row: row['coord_x'] if row['hostTeam']!=row['team'] else (-1)*row['coord_x'], axis=1)
+                   df1['new_x']= df1.apply(lambda row: 90 - row['coord_x'] if row['hostTeam']!=row['team'] else 90 + row['coord_x'], axis=1)
                    df1['new_y']= df1.apply(lambda row: row['coord_y'] if row['hostTeam']!=row['team'] else (-1)*row['coord_y'], axis=1)
                 else:
-                   df1['new_x']= df1.apply(lambda row: row['coord_x'] if row['hostTeam']==row['team'] else (-1)*row['coord_x'], axis=1)
+                   df1['new_x']= df1.apply(lambda row: 90 - row['coord_x'] if row['hostTeam']==row['team'] else 90 + row['coord_x'], axis=1)
                    df1['new_y']= df1.apply(lambda row: row['coord_y'] if row['hostTeam']==row['team'] else (-1)*row['coord_y'], axis=1)
           df=pd.concat([df,df1], axis=0, ignore_index=True)
       dt=pd.concat([dt, df], axis=0, ignore_index=True)
@@ -120,4 +119,3 @@ def Taux_team(dt_f: pd.DataFrame, team: str, saison: int):
             row.append(len(df[ (df['new_x']< i+5) & (df['new_x']> i) & (df['new_y']< j+5) & (df['new_y']> j)])/len(df['gameId'].unique()))
         taux_tir_team.append(row)
     return taux_tir_team
-
