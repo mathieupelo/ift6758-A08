@@ -116,20 +116,21 @@ def create_features1(data: pd.DataFrame, pattern: str, outname: str):
     new_data = pd.DataFrame()
 
     # Isoler les données des saisons régulières de 2016-2017 à 2019-2020
-    pattern = re.compile()
+    pattern = re.compile(pattern)
     if pattern is not None:
-        data = data[data['gameId'].str.match(pattern)]
+        data = data[data['gameId'].astype(str).str.match(pattern)]
+        data.reset_index(inplace=True)
 
     # Créer la variable distance_goal
-    new_data['distance_goal'] = distance_goal(data['x'], data['y'])
+    new_data['distance_goal'] = distance_goal(data['coord_x'], data['coord_y'])
     # Créer la variable angle_goal
-    new_data['angle_goal'] = angle_goal(data['x'], data['y'])
+    new_data['angle_goal'] = angle_goal(data['coord_x'], data['coord_y'])
     # Créer la variable is_goal
     new_data['is_goal'] = is_goal(data)
     # Créer la variable empty_goal
     new_data['empty_goal'] = empty_goal(data)
 
-    new_data.to_csv(f'../data/{outname}')
+    new_data.to_csv(f'../data/derivatives/{outname}', index=False)
 
 if __name__ == '__main__':
     # Charger les données
