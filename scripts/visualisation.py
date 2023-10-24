@@ -3,6 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+##########################################################################################
+# Milestone 1
+##########################################################################################
+
 def shots_goals (data : pd.DataFrame, saison: int, log: bool):
     df = data[(data['gameId']//1000000)== saison]
     result = df.groupby(['shotCategory','goalFlag']).size().unstack(fill_value=0)
@@ -119,3 +123,8 @@ def Taux_team(dt_f: pd.DataFrame, team: str, saison: int):
             row.append(len(df[ (df['new_x']< i+5) & (df['new_x']> i) & (df['new_y']< j+5) & (df['new_y']> j)])/len(df['gameId'].unique()))
         taux_tir_team.append(row)
     return taux_tir_team
+
+
+##########################################################################################
+# Milestone 2
+##########################################################################################
