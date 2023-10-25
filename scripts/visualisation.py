@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # Milestone 1
 ##########################################################################################
 
-def shots_goals (data : pd.DataFrame, saison: int, log: bool):
+def shots_goals (data: pd.DataFrame, saison: int, log: bool):
     df = data[(data['gameId']//1000000)== saison]
     result = df.groupby(['shotCategory','goalFlag']).size().unstack(fill_value=0)
     result['Total']=result[False]+result[True]
@@ -53,7 +53,7 @@ def Distance_goals (data : pd.DataFrame, saison: int):
     plt.show()
 
 
-def Distance_goals_shots (data : pd.DataFrame, saison: int):
+def Distance_goals_shots (data: pd.DataFrame, saison: int):
     df = data[(data['goalFlag'] == True) & (data['gameId']//1000000 == saison)].copy()
     df['distance'] = np.sqrt((90-np.absolute(df['coord_x'])).pow(2) + df['coord_y'].pow(2))
     
@@ -128,3 +128,48 @@ def Taux_team(dt_f: pd.DataFrame, team: str, saison: int):
 ##########################################################################################
 # Milestone 2
 ##########################################################################################
+
+def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, save: bool):
+    """
+    Plot the number of shots and goals separately for binned feature from the goal
+    """
+    df = data.copy()
+
+    # Regrouper les distance en bins. Par défaut, 10 bins de même largeur
+    hist, bins = np.histogram(df[feature])
+
+    # Définir style color-blind friendly
+    plt.style.use('seaborn-v0_8-colorblind')
+
+    # Plot les histogrammes selon si un tir a mené à un but ou non
+    plt.figure(figsize=(6, 4))
+    plt.hist(df[df['is_goal']==0][feature], bins=bins, label='Non but')
+    plt.hist(df[df['is_goal']==1][feature], bins=bins, label='But')
+
+    # Étiqueté l'axe x
+    if feature == 'distance_goal':
+        xlabel = 'Distance du filet (pieds)'
+        feature_name = 'distance'
+    elif feature == 'angle_goal':
+        xlabel = 'Angle du tir (degrés)'
+        feature_name = "angle"
+    else:
+        xlabel = feature
+        feature_name = feature
+    plt.xlabel(xlabel)
+
+    # Étiqueté l'axe y
+    if transform is not None:
+        plt.yscale(transform)
+        plt.ylabel(f'Nombre de tirs ({transform})')
+        filename = f'shots_goals_{feature_name}_log.png'
+    else:
+        plt.ylabel('Nombre de tirs')
+        filename = f'shots_goals_{feature_name}.png'
+
+    plt.legend()
+    plt.title(f'Nombre de tirs et buts selon {feature_name} du filet')
+    
+    # Sauvegarder la figure
+    if save:
+        plt.savefig(f'../figures/{filename}')
