@@ -130,6 +130,9 @@ def create_features1(data: pd.DataFrame, pattern: str, outname: str):
     # Créer la variable empty_goal
     new_data['empty_goal'] = empty_goal(data)
 
+    # Enlever les lignes avec des valeurs manquantes
+    new_data.dropna(inplace=True)
+    # Sauvegarder le dataframe
     new_data.to_csv(f'../data/derivatives/{outname}', index=False)
 
 if __name__ == '__main__':
