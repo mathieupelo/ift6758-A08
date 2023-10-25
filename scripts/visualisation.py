@@ -1,5 +1,6 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 
@@ -129,9 +130,53 @@ def Taux_team(dt_f: pd.DataFrame, team: str, saison: int):
 # Milestone 2
 ##########################################################################################
 
+def rename_feature(feature: str):
+    """
+    Retourne le nom de la caractéristique à partir du nom de la variable
+
+    Parameters
+    ----------
+    feature : str
+        Nom de la variable
+    
+    Returns
+    -------
+    feature_name: str
+        Nom de la caractéristique
+    label_name: str
+        Nom à utiliser pour les figures
+    """
+    if feature == 'distance_goal':
+        label_name = 'Distance du filet (pieds)'
+        feature_name = 'distance'
+    elif feature == 'angle_goal':
+        label_name = 'Angle du tir (degrés)'
+        feature_name = "angle"
+    else:
+        label_name = feature
+        feature_name = feature
+
+    return feature_name, label_name
+
 def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, save: bool):
     """
-    Plot the number of shots and goals separately for binned feature from the goal
+    Historgramme du nombre de tirs séparés par but ou non but selon une `feature` donnée
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Dataframe contenant les données des tirs
+    feature : str
+        Nom de la colonne à utiliser en x
+    transform : str
+        Transformation à appliquer à la colonne `feature`. Peut être None, 'log', 
+        'logit', etc. Voir la référence pour la liste des transformations disponibles
+    save : bool
+        Si True, sauvegarde la figure dans le folder `figures`
+
+    References
+    ----------
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.yscale.html
     """
     df = data.copy()
 
@@ -147,15 +192,7 @@ def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, sa
     plt.hist(df[df['is_goal']==1][feature], bins=bins, label='But')
 
     # Étiqueté l'axe x
-    if feature == 'distance_goal':
-        xlabel = 'Distance du filet (pieds)'
-        feature_name = 'distance'
-    elif feature == 'angle_goal':
-        xlabel = 'Angle du tir (degrés)'
-        feature_name = "angle"
-    else:
-        xlabel = feature
-        feature_name = feature
+    feature_name, xlabel = rename_feature(feature)
     plt.xlabel(xlabel)
 
     # Étiqueté l'axe y
@@ -165,11 +202,42 @@ def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, sa
         filename = f'shots_goals_{feature_name}_log.png'
     else:
         plt.ylabel('Nombre de tirs')
-        filename = f'shots_goals_{feature_name}.png'
+        filename = f'shots_goals_{feature_name}.svg'
 
     plt.legend()
     plt.title(f'Nombre de tirs et buts selon {feature_name} du filet')
     
     # Sauvegarder la figure
+    if save:
+        plt.savefig(f'../figures/{filename}')
+
+
+def hist_2d_shots(data: pd.DataFrame, x: str, y: str, hue: str, save: bool):
+    """
+    Histogramme 2D des tirs selon la variable x et y
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Dataframe contenant les données des tirs
+    x : str
+        Nom de la colonne à utiliser en x
+    y : str
+        Nom de la colonne à utiliser en y
+    hue : str
+        Nom de la colonne à utiliser pour séparer les points
+    save : bool
+        Si True, sauvegarde la figure dans le folder `figures`
+    """
+    # Définir le nom des axes
+    x_name, xlabel = rename_feature(x)
+    y_name, ylabel = rename_feature(y)
+    filename = f'hist_2d_{x_name}_{y_name}.svg'
+
+    plt.figure(figsize=(6, 4))
+    sns.jointplot(data=data, x='distance_goal', y='angle_goal')
+    plt.ylabel(ylabel)
+    plt.xlabel(xlabel)
+    
     if save:
         plt.savefig(f'../figures/{filename}')
