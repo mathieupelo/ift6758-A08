@@ -54,7 +54,7 @@ def angle_goal(x: float, y: float):
     x_goal, y_goal = 89, 0
 
     # Calculer l'angle entre le tir et le filet
-    angle = np.arctan2(y_goal - np.abs(y), x_goal - np.abs(x))
+    angle = np.arctan2(y_goal - y, x_goal - np.abs(x))
     # Convertir l'angle en degrés
     angle = np.rad2deg(angle)
 

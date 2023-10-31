@@ -184,7 +184,7 @@ def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, sa
     hist, bins = np.histogram(df[feature])
 
     # Définir style color-blind friendly
-    plt.style.use('seaborn-v0_8-colorblind')
+    # plt.style.use('seaborn-v0_8-colorblind')
 
     # Plot les histogrammes selon si un tir a mené à un but ou non
     plt.figure(figsize=(6, 4))
