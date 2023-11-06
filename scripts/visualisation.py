@@ -181,7 +181,7 @@ def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, sa
     df = data.copy()
 
     # Regrouper les distance en bins. Par défaut, 10 bins de même largeur
-    hist, bins = np.histogram(df[feature])
+    hist, bins = np.histogram(df[feature], bins=50)
 
     # Définir style color-blind friendly
     # plt.style.use('seaborn-v0_8-colorblind')
@@ -239,5 +239,55 @@ def hist_2d_shots(data: pd.DataFrame, x: str, y: str, hue: str, save: bool):
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     
+    if save:
+        plt.savefig(f'../figures/{filename}')
+
+
+def goal_rate(data: pd.DataFrame, feature: str, lower_bound: int=0, upper_bound: int=101, step: int=5, save: bool=False):
+    """
+    Taux de buts selon une caractéristique donnée
+
+    Le taux de buts est calculé en divisant le nombre de buts par le nombre de tirs.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Dataframe contenant les données des tirs
+    feature : str
+        Nom de la colonne à utiliser en x. Doit être 'distance_goal' ou 'angle_goal'.
+    lower_bound : int
+        Borne inférieure à utiliser pour le binning
+    upper_bound : int
+        Borne supérieure à utiliser pour le binning
+    step : int
+        Largeur des bins
+    save : bool
+        Si True, sauvegarde la figure dans le folder `figures`
+    """
+    # Regrouper la caractéristique `feature` en bins.
+    bins = np.arange(lower_bound, upper_bound, step)
+    # Attribuer une bin à chaque entrée de `data`
+    bins_idx = np.digitize(data[feature], bins, right=False)
+
+    # Calculer le taux de buts par bin
+    goal_rate = [data[bins_idx==i]['is_goal'].sum()/len(data[bins_idx==i]['is_goal']) for i in np.unique(bins_idx)]
+
+    # Définir les xticks
+    bins_label = [f"[{bins[i]}; {bins[i+1]}[" for i in range(len(bins[:-1]))]
+    if feature == 'angle_goal':
+        bins_label.append('[85-90]')
+    
+    # Plot le taux de buts selon la `feature` donnée
+    plt.figure(figsize=(8, 4))
+    plt.plot(bins_label, goal_rate, marker='o')
+    plt.xticks(rotation=90)
+    
+    # Étiqueté l'axe x
+    feature_name, xlabel = rename_feature(feature)
+    filename = f'goal_rate_{feature_name}.svg'
+    plt.xlabel(f"{xlabel} regroupée en bins")
+    # Étiqueté l'axe y
+    plt.ylabel("Taux de buts selon la distance")
+
     if save:
         plt.savefig(f'../figures/{filename}')
