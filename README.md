@@ -2,5 +2,6 @@
 ## Team : 
 Mathieu Peloquin cg65270       
 Marie-Eve Picard
+Mouaad El Jemli
 ##        
 ##       
