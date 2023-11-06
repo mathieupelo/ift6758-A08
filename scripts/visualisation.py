@@ -288,6 +288,59 @@ def goal_rate(data: pd.DataFrame, feature: str, lower_bound: int=0, upper_bound:
     plt.xlabel(f"{xlabel} regroupée en bins")
     # Étiqueté l'axe y
     plt.ylabel("Taux de buts selon la distance")
+    # Titre
+    plt.title(f"Taux de buts selon {feature_name} du filet")
 
+    if save:
+        plt.savefig(f'../figures/{filename}')
+
+
+def hist_goals_dist(data: pd.DataFrame, transform: str, save: bool):
+    """
+    Historgramme du nombre de tirs séparés par but ou non but selon une `feature` donnée
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Dataframe contenant les données des tirs
+    transform : str
+        Transformation à appliquer à la colonne `feature`. Peut être None, 'log', 
+        'logit', etc. Voir la référence pour la liste des transformations disponibles
+    save : bool
+        Si True, sauvegarde la figure dans le folder `figures`
+
+    References
+    ----------
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.yscale.html
+    """
+    df = data.copy()
+    # Garder uniquement les buts
+    df = df[df['is_goal']==1]
+
+    # Regrouper les distance en bins. Par défaut, 10 bins de même largeur
+    hist, bins = np.histogram(df['distance_goal'], bins=50)
+
+    # Plot les histogrammes selon si un tir a mené à un but ou non
+    plt.figure(figsize=(6, 4))
+    plt.hist(df[df['empty_goal']==0]['distance_goal'], bins=bins, label='Filet non-vide')
+    plt.hist(df[df['empty_goal']==1]['distance_goal'], alpha=0.6, bins=bins, label='Filet vide')
+
+    # Étiqueté l'axe x
+    feature_name, xlabel = rename_feature('distance_goal')
+    plt.xlabel(xlabel)
+
+    # Étiqueté l'axe y
+    if transform is not None:
+        plt.yscale(transform)
+        plt.ylabel(f'Nombre de buts ({transform})')
+        filename = f'goals_distance_empty_goal_log.svg'
+    else:
+        plt.ylabel('Nombre de buts')
+        filename = f'goals_distance_empty_goal.svg'
+
+    plt.legend()
+    plt.title(f'Nombre de buts selon {feature_name} du filet considérant le filet vide ou non')
+    
+    # Sauvegarder la figure
     if save:
         plt.savefig(f'../figures/{filename}')
