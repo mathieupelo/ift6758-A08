@@ -2,6 +2,31 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib
+
+#Define the general parameters for plotting
+sns.set_context("talk")
+
+# From : https://gist.github.com/thriveth/8560036
+CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                  '#f781bf', '#a65628', '#984ea3',
+                  '#999999', '#e41a1c', '#dede00']
+cb_maps = matplotlib.colors.ListedColormap(CB_color_cycle, name='colorblind_cmap')
+
+
+params = {'legend.fontsize': 'large',
+          'figure.figsize': (10,10),
+          'font.size': 10,
+          'figure.dpi': 300,
+          'axes.labelsize': 'x-large',
+          'axes.titlesize':'large',
+          'xtick.labelsize':12,
+          'ytick.labelsize':12,
+          'axes.spines.right': False,
+          'axes.spines.top': False,
+          'image.cmap':cb_maps}
+
+plt.rcParams.update(params)
 
 
 ##########################################################################################
@@ -271,12 +296,12 @@ def goal_rate(data: pd.DataFrame, feature: str, lower_bound: int=0, upper_bound:
 
     # Calculer le taux de buts par bin
     goal_rate = [data[bins_idx==i]['is_goal'].sum()/len(data[bins_idx==i]['is_goal']) for i in np.unique(bins_idx)]
-
+    
     # Définir les xticks
     bins_label = [f"[{bins[i]}; {bins[i+1]}[" for i in range(len(bins[:-1]))]
     if feature == 'angle_goal':
         bins_label.append('[85-90]')
-    
+
     # Plot le taux de buts selon la `feature` donnée
     plt.figure(figsize=(8, 4))
     plt.plot(bins_label, goal_rate, marker='o')
