@@ -181,7 +181,7 @@ def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, sa
     df = data.copy()
 
     # Regrouper les distance en bins. Par défaut, 10 bins de même largeur
-    hist, bins = np.histogram(df[feature])
+    hist, bins = np.histogram(df[feature], bins=50)
 
     # Définir style color-blind friendly
     # plt.style.use('seaborn-v0_8-colorblind')
@@ -239,5 +239,108 @@ def hist_2d_shots(data: pd.DataFrame, x: str, y: str, hue: str, save: bool):
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     
+    if save:
+        plt.savefig(f'../figures/{filename}')
+
+
+def goal_rate(data: pd.DataFrame, feature: str, lower_bound: int=0, upper_bound: int=101, step: int=5, save: bool=False):
+    """
+    Taux de buts selon une caractéristique donnée
+
+    Le taux de buts est calculé en divisant le nombre de buts par le nombre de tirs.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Dataframe contenant les données des tirs
+    feature : str
+        Nom de la colonne à utiliser en x. Doit être 'distance_goal' ou 'angle_goal'.
+    lower_bound : int
+        Borne inférieure à utiliser pour le binning
+    upper_bound : int
+        Borne supérieure à utiliser pour le binning
+    step : int
+        Largeur des bins
+    save : bool
+        Si True, sauvegarde la figure dans le folder `figures`
+    """
+    # Regrouper la caractéristique `feature` en bins.
+    bins = np.arange(lower_bound, upper_bound, step)
+    # Attribuer une bin à chaque entrée de `data`
+    bins_idx = np.digitize(data[feature], bins, right=False)
+
+    # Calculer le taux de buts par bin
+    goal_rate = [data[bins_idx==i]['is_goal'].sum()/len(data[bins_idx==i]['is_goal']) for i in np.unique(bins_idx)]
+
+    # Définir les xticks
+    bins_label = [f"[{bins[i]}; {bins[i+1]}[" for i in range(len(bins[:-1]))]
+    if feature == 'angle_goal':
+        bins_label.append('[85-90]')
+    
+    # Plot le taux de buts selon la `feature` donnée
+    plt.figure(figsize=(8, 4))
+    plt.plot(bins_label, goal_rate, marker='o')
+    plt.xticks(rotation=90)
+    
+    # Étiqueté l'axe x
+    feature_name, xlabel = rename_feature(feature)
+    filename = f'goal_rate_{feature_name}.svg'
+    plt.xlabel(f"{xlabel} regroupée en bins")
+    # Étiqueté l'axe y
+    plt.ylabel("Taux de buts selon la distance")
+    # Titre
+    plt.title(f"Taux de buts selon {feature_name} du filet")
+
+    if save:
+        plt.savefig(f'../figures/{filename}')
+
+
+def hist_goals_dist(data: pd.DataFrame, transform: str, save: bool):
+    """
+    Historgramme du nombre de tirs séparés par but ou non but selon une `feature` donnée
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Dataframe contenant les données des tirs
+    transform : str
+        Transformation à appliquer à la colonne `feature`. Peut être None, 'log', 
+        'logit', etc. Voir la référence pour la liste des transformations disponibles
+    save : bool
+        Si True, sauvegarde la figure dans le folder `figures`
+
+    References
+    ----------
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.yscale.html
+    """
+    df = data.copy()
+    # Garder uniquement les buts
+    df = df[df['is_goal']==1]
+
+    # Regrouper les distance en bins. Par défaut, 10 bins de même largeur
+    hist, bins = np.histogram(df['distance_goal'], bins=50)
+
+    # Plot les histogrammes selon si un tir a mené à un but ou non
+    plt.figure(figsize=(6, 4))
+    plt.hist(df[df['empty_goal']==0]['distance_goal'], bins=bins, label='Filet non-vide')
+    plt.hist(df[df['empty_goal']==1]['distance_goal'], alpha=0.6, bins=bins, label='Filet vide')
+
+    # Étiqueté l'axe x
+    feature_name, xlabel = rename_feature('distance_goal')
+    plt.xlabel(xlabel)
+
+    # Étiqueté l'axe y
+    if transform is not None:
+        plt.yscale(transform)
+        plt.ylabel(f'Nombre de buts ({transform})')
+        filename = f'goals_distance_empty_goal_log.svg'
+    else:
+        plt.ylabel('Nombre de buts')
+        filename = f'goals_distance_empty_goal.svg'
+
+    plt.legend()
+    plt.title(f'Nombre de buts selon {feature_name} du filet considérant le filet vide ou non')
+    
+    # Sauvegarder la figure
     if save:
         plt.savefig(f'../figures/{filename}')
