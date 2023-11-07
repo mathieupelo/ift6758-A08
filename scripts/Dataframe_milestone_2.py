@@ -2,6 +2,7 @@ import os
 import json
 import pandas as pd
 from tqdm import tqdm
+import math
 
 def load_all_seasons(base_path):
     all_data = {}
@@ -28,13 +29,61 @@ def load_all_seasons(base_path):
     df = pd.DataFrame.from_dict(all_data)
     return df
 
+# Fonction pour calculer la distance euclidienne entre deux points
+def calculate_distance(x1, y1, x2, y2):
+    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+def find_previous_event(play_data, current_index, current_period, current_period_time):
+    if current_index == 0:
+        return None  # Pas d'événement précédent pour le premier événement
+    
+    prev_event = play_data[current_index - 1]
+    prev_event_period = prev_event['about']['period']
+    prev_event_period_time = prev_event['about']['periodTime']
+
+    # Sacahnt que period_time est une chaîne de format "MM:SS"
+    current_period_time_seconds = int(current_period_time.split(':')[0]) * 60 + int(current_period_time.split(':')[1])
+    prev_event_period_time_seconds = int(prev_event_period_time.split(':')[0]) * 60 + int(prev_event_period_time.split(':')[1])
+
+    # Calcul le temps écoulé entre les événements
+    if current_period == prev_event_period:
+        time_since_last_event = current_period_time_seconds - prev_event_period_time_seconds
+    else:
+        # Calcul le temps restant dans la période précédente et ajout le temps écoulé dans la période actuelle
+        # Ceci suppose que chaque période est de 20 minutes. 
+        # Peut-être à ajuster si nécessaire pour les périodes supplémentaires / prolongations.
+        time_since_last_event = (20 * 60 - prev_event_period_time_seconds) + current_period_time_seconds
+
+    prev_event_data = {
+        'last_event_type': prev_event['result']['eventTypeId'],
+        'last_event_x': prev_event['coordinates'].get('x', pd.NA),
+        'last_event_y': prev_event['coordinates'].get('y', pd.NA),
+        'time_since_last_event': time_since_last_event if time_since_last_event > 0 else pd.NA,
+        'distance_from_last_event': pd.NA
+    }
+    return prev_event_data
+
+# Ajout d'une nouvelle fonction pour identifier la dernière pénalité
+def find_previous_penalty(play_data, current_index):
+    for i in range(current_index - 1, -1, -1):  # Commence par l'événement précédent et remonter
+        if play_data[i]['result']['eventTypeId'] == 'PENALTY':
+            return play_data[i]
+    return None  # Aucune pénalité trouvée
+
+
 def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
     temp_data = {
         'gameId': [], 'evt_idx': [], 'prd': [], 'prdTime': [], 'team': [],
         'goalFlag': [], 'shotCategory': [], 'coord_x': [], 'coord_y': [],
         'shotBy': [], 'goalieName': [], 'noGoalie': [], 'teamStrength': [],
         'visitorTeam': [], 'hostTeam': [], 'homeRinkSide': [], 'awayRinkSide': [],
+        # Ces caractéristiques sont pour l'ingénierie des caractéristiques 2 du Milestone 2
+        'last_event_type': [], 'last_event_x': [], 'last_event_y': [],
+        'time_since_last_event': [], 'distance_from_last_event': []
     }
+    
+    
+    temp_data['time_since_last_penalty'] = []
 
     for idx in range(df.shape[1]):
         play_data = df.iloc[:, idx]["liveData"]["plays"]["allPlays"]
@@ -99,8 +148,32 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
             
             if shooter_counter != goalie_counter:
                 raise ValueError("Shooter count and goalie count do not match")
+            
+            # Ajout des données de l'événement précédent
+            current_period = single_event['about']['period']
+            current_period_time = single_event['about']['periodTime']
+                        
+            prev_event_data = find_previous_event(play_data, event_index, current_period, current_period_time)
+
+            if prev_event_data:
+                #coordonnées du tir actuel pour calculer la distance
+                current_x = single_event['coordinates'].get('x', pd.NA)
+                current_y = single_event['coordinates'].get('y', pd.NA)
+
+                # Calcul des données temporelles et spatiales si les données sont complètes
+                if prev_event_data['last_event_x'] is not pd.NA and prev_event_data['last_event_y'] is not pd.NA and current_x is not pd.NA and current_y is not pd.NA:
+                    prev_event_data['distance_from_last_event'] = calculate_distance(
+                        prev_event_data['last_event_x'], prev_event_data['last_event_y'],
+                        current_x, current_y)
+            
+                for key in ['last_event_type', 'last_event_x', 'last_event_y', 'time_since_last_event', 'distance_from_last_event']:
+                    temp_data[key].append(prev_event_data.get(key, pd.NA))
+            else:
+                # Si prev_event_data est None (c'est le premier événement), on ajoute des valeurs NA.
+                for key in ['last_event_type', 'last_event_x', 'last_event_y', 'time_since_last_event', 'distance_from_last_event']:
+                    temp_data[key].append(pd.NA)
     
     output_df = pd.DataFrame(temp_data)
     
-    output_df.to_csv('../data/derivatives/dataframe.csv', index=False)
+    output_df.to_csv('../data/derivatives/dataframe_milestone_2.csv', index=False)
     return output_df

@@ -54,7 +54,7 @@ def angle_goal(x: float, y: float):
     x_goal, y_goal = 89, 0
 
     # Calculer l'angle entre le tir et le filet
-    angle = np.arctan((y_goal - y)/(x_goal - np.abs(x)))
+    angle = np.arctan2(y_goal - y, x_goal - np.abs(x))
     # Convertir l'angle en degrés
     angle = np.rad2deg(angle)
 
@@ -132,11 +132,41 @@ def create_features1(data: pd.DataFrame, pattern: str, outname: str):
 
     # Enlever les lignes avec des valeurs manquantes
     new_data.dropna(inplace=True)
-    # Sauvegarder le dataframe
-    new_data.to_csv(f'../data/derivatives/{outname}', index=False)
 
-if __name__ == '__main__':
-    # Charger les données
-    data = pd.read_csv('../data/derivatives/dataframe.csv')
-    # Créer les nouvelles caractéristiques
-    create_features1(data, '^201[6-9]02\d{4}$', 'features_train1.csv')
+    new_data.to_csv(f'../data/derivatives/{outname}', index=False)
+    
+    
+
+def create_features2(data: pd.DataFrame, pattern: str):
+    """
+    Fonction pour ajouter de nouvelles caractéristiques aux données existantes et
+    sauvegarder le résultat dans le même fichier CSV.
+
+    Parameters
+    ----------
+    data: DataFrame
+        Données nettoyées provenant du Milestone 1.
+    pattern: str
+        Regex pour sélectionner certaines données. Si None, toutes les données dans data
+        seront utilisées.
+    """
+
+    data = data.copy()
+
+    # Ajout des nouvelles caractéristiques au DataFrame
+    data['game_seconds'] = data['prdTime'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
+    data['coord_x'].fillna(0, inplace=True)
+    data['coord_y'].fillna(0, inplace=True)
+    data['shot_distance'] = distance_goal(data['coord_x'], data['coord_y'])
+    data['shot_angle'] = angle_goal(data['coord_x'], data['coord_y'])
+    data['rebond'] = (data['last_event_type'] == 'SHOT')
+    previous_shot_angle = angle_goal(data['last_event_x'], data['last_event_y'])
+    data['changement_angle_tir'] = np.where(data['rebond'], previous_shot_angle + data['shot_angle'], 0)
+    data['vitesse'] = data['distance_from_last_event'] / data['time_since_last_event']
+    
+    # Gestion des cas où time_since_last_event est zéro pour éviter une division par zéro
+    data['vitesse'].replace(np.inf, 0, inplace=True)
+    data['vitesse'].fillna(0, inplace=True)
+
+    data.dropna(inplace=True)
+    return data
