@@ -81,9 +81,6 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
         'last_event_type': [], 'last_event_x': [], 'last_event_y': [],
         'time_since_last_event': [], 'distance_from_last_event': []
     }
-    
-    
-    temp_data['time_since_last_penalty'] = []
 
     for idx in range(df.shape[1]):
         play_data = df.iloc[:, idx]["liveData"]["plays"]["allPlays"]
@@ -173,6 +170,10 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
                 for key in ['last_event_type', 'last_event_x', 'last_event_y', 'time_since_last_event', 'distance_from_last_event']:
                     temp_data[key].append(pd.NA)
     
+    for key, value in temp_data.items():
+        if len(value) != len(temp_data['gameId']):
+            print(f"Length mismatch in {key}: {len(value)} vs {len(temp_data['gameId'])}")
+
     output_df = pd.DataFrame(temp_data)
     
     output_df.to_csv('../data/derivatives/dataframe_milestone_2.csv', index=False)

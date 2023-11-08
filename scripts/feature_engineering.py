@@ -155,10 +155,8 @@ def create_features2(data: pd.DataFrame, pattern: str):
 
     # Ajout des nouvelles caractéristiques au DataFrame
     data['game_seconds'] = data['prdTime'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
-    data['coord_x'].fillna(0, inplace=True)
-    data['coord_y'].fillna(0, inplace=True)
     data['shot_distance'] = distance_goal(data['coord_x'], data['coord_y'])
-    data['shot_angle'] = angle_goal(data['coord_x'], data['coord_y'])
+    data['shot_angle'] = data.apply(lambda row: angle_goal(row['coord_x'], row['coord_y']), axis=1)
     data['rebond'] = (data['last_event_type'] == 'SHOT')
     previous_shot_angle = angle_goal(data['last_event_x'], data['last_event_y'])
     data['changement_angle_tir'] = np.where(data['rebond'], previous_shot_angle + data['shot_angle'], 0)
@@ -168,5 +166,4 @@ def create_features2(data: pd.DataFrame, pattern: str):
     data['vitesse'].replace(np.inf, 0, inplace=True)
     data['vitesse'].fillna(0, inplace=True)
 
-    data.dropna(inplace=True)
     return data
