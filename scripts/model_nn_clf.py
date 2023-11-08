@@ -75,7 +75,7 @@ loss_function = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(ratio_shots_goals))
 # Définir le taux d'apprentissage
 learning_rate = 0.001
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, nesterov=True, momentum=0.9) # Fixed momentum
-epochs = 100
+epochs = 20
 
 # Entrainer le modèle
 model.train()
@@ -94,4 +94,6 @@ for epoch in range(epochs):
     train_loss.append(loss.item())
 
 plt.plot(train_loss)
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
 plt.savefig('../figures/train_loss.svg')
