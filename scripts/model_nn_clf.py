@@ -95,5 +95,7 @@ for epoch in range(epochs):
 
 plt.plot(train_loss)
 plt.xlabel('Epochs')
+plt.xlim(0, epochs)
+plt.xticks(range(0, epochs+1, 1))
 plt.ylabel('Loss')
 plt.savefig('../figures/train_loss.svg')
