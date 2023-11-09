@@ -260,6 +260,7 @@ def hist_2d_shots(data: pd.DataFrame, x: str, y: str, hue: str, save: bool):
     filename = f'hist_2d_{x_name}_{y_name}.svg'
 
     plt.figure(figsize=(6, 4))
+    plt.set_cmap("Greens")
     sns.jointplot(data=data, x='distance_goal', y='angle_goal')
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
