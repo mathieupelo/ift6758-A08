@@ -22,7 +22,7 @@ def load_all_seasons(base_path):
             json_path = os.path.join(season_path, json_file)
             with open(json_path, 'r') as f:
                 game_data = json.load(f)
-                
+                f.close()
             game_id = json_file.split('.')[0]
             all_data[game_id] = game_data
     
