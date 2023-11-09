@@ -15,13 +15,13 @@ cb_maps = matplotlib.colors.ListedColormap(CB_color_cycle, name='colorblind_cmap
 
 
 params = {'legend.fontsize': 'large',
-          'figure.figsize': (10,10),
-          'font.size': 10,
-          'figure.dpi': 300,
+          'figure.figsize': (12,12),
+          'font.size': 8,
+          'figure.dpi': 100,
           'axes.labelsize': 'x-large',
           'axes.titlesize':'large',
-          'xtick.labelsize':12,
-          'ytick.labelsize':12,
+          'xtick.labelsize':10,
+          'ytick.labelsize':10,
           'axes.spines.right': False,
           'axes.spines.top': False,
           'image.cmap':cb_maps}
@@ -227,7 +227,7 @@ def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, sa
         filename = f'shots_goals_{feature_name}_log.png'
     else:
         plt.ylabel('Nombre de tirs')
-        filename = f'shots_goals_{feature_name}.svg'
+        filename = f'shots_goals_{feature_name}.png'
 
     plt.legend()
     plt.title(f'Nombre de tirs et buts selon {feature_name} du filet')
@@ -257,7 +257,7 @@ def hist_2d_shots(data: pd.DataFrame, x: str, y: str, hue: str, save: bool):
     # Définir le nom des axes
     x_name, xlabel = rename_feature(x)
     y_name, ylabel = rename_feature(y)
-    filename = f'hist_2d_{x_name}_{y_name}.svg'
+    filename = f'hist_2d_{x_name}_{y_name}.png'
 
     plt.figure(figsize=(6, 4))
     plt.set_cmap("Greens")
@@ -310,7 +310,7 @@ def goal_rate(data: pd.DataFrame, feature: str, lower_bound: int=0, upper_bound:
     
     # Étiqueté l'axe x
     feature_name, xlabel = rename_feature(feature)
-    filename = f'goal_rate_{feature_name}.svg'
+    filename = f'goal_rate_{feature_name}.png'
     plt.xlabel(f"{xlabel} regroupée en bins")
     # Étiqueté l'axe y
     plt.ylabel("Taux de buts selon la distance")
@@ -359,10 +359,10 @@ def hist_goals_dist(data: pd.DataFrame, transform: str, save: bool):
     if transform is not None:
         plt.yscale(transform)
         plt.ylabel(f'Nombre de buts ({transform})')
-        filename = f'goals_distance_empty_goal_log.svg'
+        filename = f'goals_distance_empty_goal_log.png'
     else:
         plt.ylabel('Nombre de buts')
-        filename = f'goals_distance_empty_goal.svg'
+        filename = f'goals_distance_empty_goal.png'
 
     plt.legend()
     plt.title(f'Nombre de buts selon {feature_name} du filet considérant le filet vide ou non')
