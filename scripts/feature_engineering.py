@@ -1,7 +1,7 @@
 import re
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
 
 def distance_goal(x: float, y: float):
     """
@@ -167,3 +167,66 @@ def create_features2(data: pd.DataFrame, pattern: str):
     data['vitesse'].fillna(0, inplace=True)
 
     return data
+
+
+def preprocessing(df: pd.DataFrame, target: str):
+    """
+    Fonction pour prétraiter les données avant de les utiliser dans un modèle. Cette fonction
+    permet de transformer les variables catégorielles en variables numériques et de normaliser
+    les variables numériques.
+
+    Parameters
+    ----------
+    df: DataFrame
+        Caractéristiques à prétraiter
+    target: str
+        Nom de la variable cible
+
+    Returns
+    -------
+    X: DataFrame
+        Données prétraitées
+    y: DataFrame
+        Variable cible
+    """
+
+    # On supprime les colonnes avec plus de 50% de NaN
+    half_count = len(df) / 2
+    df = df.dropna(thresh=half_count, axis=1)
+
+    # Supprime les lignes avec des NaN
+    df = df.dropna()
+
+    # Colonnes à supprimer
+    cols_to_rm = ['team', 'shotBy', 'goalieName', 'visitorTeam', 'hostTeam', 'homeRinkSide', 'awayRinkSide']
+    df = df.drop(cols_to_rm, axis=1)
+    # Colonnes One-Hot Encoding
+    cols_to_encode = ['shotCategory', 'last_event_type']
+    df_encoded = pd.get_dummies(df[cols_to_encode], dtype=int)
+    df = pd.concat([df, df_encoded], axis=1).drop(cols_to_encode, axis=1)
+    # Colonnes à binariser
+    cols_to_binarize = ['noGoalie', 'rebond']
+    for col in cols_to_binarize:
+        df[col] = LabelEncoder().fit_transform(df[col])
+
+    # Supprime les colonnes redondantes
+    cols_to_drop = ['gameId', 'evt_idx', 'prdTime']
+    df = df.drop(cols_to_drop, axis=1)
+
+    # Extraction de la variable cible
+    y = df[target]
+    # Extraction des caractéristiques
+    X = df.drop(target, axis=1)
+
+    # Standardisation des variables numériques
+    cols_to_standardize = [
+        'coord_x', 'coord_y', 'last_event_x', 'last_event_y',  
+        'time_since_last_event', 'distance_from_last_event', 
+        'game_seconds', 'shot_distance', 'shot_angle', 
+        'changement_angle_tir', 'vitesse']
+    features = X[cols_to_standardize]
+    scaler = StandardScaler().fit(features.values)
+    features = scaler.transform(features.values)
+    X[cols_to_standardize] = features
+
+    return X, y
