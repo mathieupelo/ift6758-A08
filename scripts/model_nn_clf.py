@@ -77,14 +77,28 @@ learning_rate = 0.001
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, nesterov=True, momentum=0.9) # Fixed momentum
 epochs = 20
 
+# Calculate accuracy (a classification metric)
+def accuracy_fn(y_true, y_pred):
+    correct = torch.eq(y_true, y_pred).sum().item()
+    acc = (correct / len(y_pred)) * 100 
+    return acc
+
+
 # Entrainer le modèle
-model.train()
+#model.train()
 train_loss = []
 for epoch in range(epochs):
     for x_batch, y_batch in train_loader:
+        # Entrainement
+        model.train()
+
         # Forward pass
-        y_pred = model(x_batch)
-        loss = loss_function(y_pred, y_batch.unsqueeze(1))
+        y_pred = model(x_batch).squeeze()
+        y_pred_probs = torch.sigmoid(y_pred)
+        
+        # Calculer la perte
+        loss = loss_function(y_pred, y_batch)
+        accuracy = accuracy_fn(y_batch, torch.round(y_pred_probs))
 
         # Backward pass
         optimizer.zero_grad()
@@ -92,6 +106,9 @@ for epoch in range(epochs):
         optimizer.step()
     
     train_loss.append(loss.item())
+
+    if epoch % 10 == 0:
+        print(f"Epoch: {epoch} | Loss: {loss:.5f}, Accuracy: {accuracy:.2f}%")
 
 plt.plot(train_loss)
 plt.xlabel('Epochs')
