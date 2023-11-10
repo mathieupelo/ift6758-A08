@@ -19,7 +19,7 @@ params = {'legend.fontsize': 'large',
           'font.size': 8,
           'figure.dpi': 100,
           'axes.labelsize': 'x-large',
-          'axes.titlesize':'large',
+          'axes.titlesize':12,
           'xtick.labelsize':10,
           'ytick.labelsize':10,
           'axes.spines.right': False,
@@ -234,7 +234,7 @@ def hist_shots_goals_feature(data: pd.DataFrame, feature:str, transform: str, sa
     
     # Sauvegarder la figure
     if save:
-        plt.savefig(f'../figures/{filename}')
+        plt.savefig(f'../figures/{filename}', bbox_inches='tight')
 
 
 def hist_2d_shots(data: pd.DataFrame, x: str, y: str, hue: str, save: bool):
@@ -318,7 +318,7 @@ def goal_rate(data: pd.DataFrame, feature: str, lower_bound: int=0, upper_bound:
     plt.title(f"Taux de buts selon {feature_name} du filet")
 
     if save:
-        plt.savefig(f'../figures/{filename}')
+        plt.savefig(f'../figures/{filename}', bbox_inches='tight')
 
 
 def hist_goals_dist(data: pd.DataFrame, transform: str, save: bool):
@@ -369,4 +369,4 @@ def hist_goals_dist(data: pd.DataFrame, transform: str, save: bool):
     
     # Sauvegarder la figure
     if save:
-        plt.savefig(f'../figures/{filename}')
+        plt.savefig(f'../figures/{filename}', bbox_inches='tight')
