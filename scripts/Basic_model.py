@@ -89,3 +89,6 @@ def cumulative_centiles_plot(y, y_prob):
     plt.grid(True)
     plt.xticks(np.arange(0, 100, 10))
     plt.yticks(np.arange(0, 100, 10))
+
+def calibrate_display(classifier, x_val, y_val, n_bin):
+    CalibrationDisplay.from_estimator(classifier, x_val, y_val, n_bins=n_bin)

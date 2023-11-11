@@ -13,6 +13,8 @@ Courbe de fiabilité
 import numpy as np
 import pandas as pd
 from comet_ml import Experiment
+from matplotlib import pyplot as plt
+from sklearn.calibration import CalibrationDisplay
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, average_precision_score
@@ -51,41 +53,107 @@ y = data['goalFlag']
 # On split 80 / 20 les donnees
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
+
 xgboost_classifier = xgb.XGBClassifier()
 xgboost_classifier.fit(X_train, y_train)
 
-y_pred = xgboost_classifier.predict(X_test)
+y_pred_prob = xgboost_classifier.predict_proba(X_test)
 
-print("X_TEST")
-print(X_test)
-
-y_pred_prob = xgboost_classifier.predict(X_test)
-
-
-roc_auc = roc_auc_score(y_test, y_pred_prob)
-fpr, tpr, _ = roc_curve(y_test, y_pred_prob)
-
-centiles = np.percentile(y_pred_prob, np.arange(0, 101, 5))  # Centiles de 0 à 100 par pas de 10
-
-
-
-average_precision = average_precision_score(y_test, y_pred_prob)
-precision, recall, _ = precision_recall_curve(y_test, y_pred_prob)
-
-
+# ROC
+roc_auc = roc_auc_score(y_test, y_pred_prob[:,1])
+fpr, tpr, _ = roc_curve(y_test, y_pred_prob[:,1])
+average_precision = average_precision_score(y_test, y_pred_prob[:,1])
+precision, recall, _ = precision_recall_curve(y_test, y_pred_prob[:,1])
 
 # Enregistrez les mesures dans Comet.ml
 experiment.log_metric("ROC AUC", roc_auc)
 experiment.log_metric("Average Precision", average_precision)
-
-# TODO: Log hyperparameter sklearn functions
-experiment.log_parameter("")
-
 # Vous pouvez également enregistrer les courbes ROC et PR
 experiment.log_curve("ROC Curve", fpr, tpr)
 experiment.log_curve("PR Curve", recall, precision)
 
 
+
+# centiles
+def Centiles_plot(y, y_prob):
+    centiles = np.percentile(y_prob, np.arange(0, 101, 5))  # Centiles de 0 à 100 par pas de 10
+
+    # listes pour stocker les taux de buts et les centiles correspondants
+    taux_buts = []
+    # les probabilités en groupes basés sur les centiles
+    for i in range(20):
+        lower_bound = centiles[i]
+        upper_bound = centiles[i + 1]
+
+        # Filtrer les probabilités dans l'intervalle du centile actuel
+        indices = np.where((y_prob >= lower_bound) & (y_prob <= upper_bound))
+        # Calculer le taux de buts pour ce groupe
+
+        goal_rate = sum(y.iloc[indices]) / len(y.iloc[indices]) * 100
+
+        # Stocker le taux de buts et le centile correspondant
+        taux_buts.append(goal_rate)
+
+    # Tracer le graphique
+    plt.plot(np.arange(0, 100, 5), taux_buts, linestyle='-')
+    plt.xlabel("Centile de la Probabilité de Tir")
+    plt.ylabel("Taux de Buts")
+    plt.title("Taux de Buts en fonction du Centile de Probabilité de Tir")
+    plt.grid(True)
+    plt.xticks(np.arange(0, 100, 10))
+    plt.yticks(np.arange(0, 100, 10))
+
+    plt.show()
+    # Log the figure to Comet.ml
+    experiment.log_figure(figure=plt, figure_name="Centiles_plot")
+
+Centiles_plot(y_test, y_pred_prob[:,1])
+
+
+def cumulative_centiles_plot(y, y_prob):
+    centiles = np.percentile(y_prob, np.arange(0, 101, 5))  # Centiles de 0 à 100 par pas de 10
+    # listes pour stocker les taux de buts et les centiles correspondants
+    cumulative_goal_proportion = []
+    total_goals = sum(y)
+    cumulative_goals = 0
+    # les probabilités en groupes basés sur les centiles
+    for i in range(20):
+        lower_bound = centiles[i]
+        upper_bound = centiles[i + 1]
+
+        # Filtrer les probabilités dans la plage du centile actuel
+        indices = np.where((y_prob >= lower_bound) & (y_prob <= upper_bound))
+        # Calculer le cumule de buts pour ce groupe
+
+        cumulative_goals += sum(y.iloc[indices])
+
+        # Stocker la proportion du cumule de buts
+        cumulative_goal_proportion.append((cumulative_goals / total_goals) * 100)
+    print("Cumulative_centile done")
+
+    # Plot and log the figure to Comet.ml
+    plt.plot(np.arange(0, 100, 5), cumulative_goal_proportion, linestyle='-')
+    plt.xlabel("Centile de la Probabilité de Tir")
+    plt.ylabel("Proportion")
+    plt.title("Cumulatif des buts en %")
+    plt.grid(True)
+    plt.xticks(np.arange(0, 100, 10))
+    plt.yticks(np.arange(0, 100, 10))
+
+    plt.show()
+    # Log the figure to Comet.ml
+    experiment.log_figure(figure=plt, figure_name="Cumulative Goals Percentage")
+
+
+cumulative_centiles_plot(y_test, y_pred_prob[:,1])
+
+# TODO: Log hyperparameter sklearn functions
+#experiment.log_parameter("")
+reshaped_X1_val = X_test.values.reshape(-1,1)
+reshaped_y1_val = y_train.values.reshape(-1,1)
+
+# Courbe de calibration
+CalibrationDisplay.from_estimator(xgboost_classifier, reshaped_X1_val, reshaped_y1_val, n_bins=30)
 
 
 """
@@ -96,6 +164,7 @@ d'hyperparamètres pour essayer de trouver le modèle le plus performant avec to
  Une fois réglé, intégrez les courbes correspondant au meilleur modèle aux quatre figures de votre article de blog et comparez brièvement les résultats au baseline XGBoost de la premiè`re partie. 
  Incluez un lien vers l'entrée comet.ml appropriée pour cette expérience et enregistrez ce modèle dans le registre des modèles.
 """
+# Latin Hypercube search -> Hyperparameter
 
 
 """
