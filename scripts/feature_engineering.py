@@ -215,6 +215,8 @@ def preprocessing(df: pd.DataFrame, target: str):
 
     # Extraction de la variable cible
     y = df[target]
+    # Binarisation de la variable cible
+    y = LabelEncoder().fit_transform(y)
     # Extraction des caractéristiques
     X = df.drop(target, axis=1)
 
