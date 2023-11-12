@@ -2,11 +2,14 @@ import torch
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from torch import nn
+import zero
+import random
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from feature_engineering import preprocessing
 
-
+# https://www.kaggle.com/code/henaghonia/fttransformer
 # TODO: Add hyperparameters tuning
 
 # Calculate accuracy (classification metric)
@@ -15,8 +18,19 @@ def accuracy_fn(y_true, y_pred):
     acc = (correct / len(y_pred)) * 100 
     return acc
 
+def seed_worker(worker_id):
+    """
+    References
+    ----------
+    https://pytorch.org/docs/stable/notes/randomness.html
+    """
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
 
 def ann_model(X, y):
+    
     # Convertir en tenseur
     y = torch.from_numpy(y.values).type(torch.float)
     X = torch.from_numpy(X.values).type(torch.float)
@@ -24,8 +38,10 @@ def ann_model(X, y):
     train = torch.utils.data.TensorDataset(X, y)
 
     # Instantier un dataloader
+    g = torch.Generator()
+    g.manual_seed(8)
     batch_size = 32 # Tradeoff entre computationnal (speed) and good gradient estimate (accuracy)
-    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, worker_init_fn=seed_worker, generator=g)
 
     # Suivant le tutoriel de Pytorch: https://www.learnpytorch.io/02_pytorch_classification/
     # Make device agnostic code
