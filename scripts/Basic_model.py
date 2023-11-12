@@ -13,7 +13,6 @@ def ROC_plot (y, y_prob):
     y_prob,
     name="Chance d'avoir un but",
     color="darkorange",
-    plot_chance_level=True,
     )
     fpr, tpr, thresholds = roc_curve(np.array(y), y_prob, pos_label=1)
     AUC = auc(fpr, tpr)
