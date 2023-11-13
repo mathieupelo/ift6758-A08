@@ -32,7 +32,7 @@ def seed_worker(worker_id):
 def ann_model(X, y):
     
     # Convertir en tenseur
-    y = torch.from_numpy(y.values).type(torch.float)
+    y = torch.from_numpy(y).type(torch.float)
     X = torch.from_numpy(X.values).type(torch.float)
     # Combiner X et y dans un Dataset
     train = torch.utils.data.TensorDataset(X, y)
@@ -80,7 +80,7 @@ def ann_model(X, y):
     # Définir le taux d'apprentissage
     learning_rate = 0.001
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, nesterov=True, momentum=0.9) # Fixed momentum
-    epochs = 20
+    epochs = 50
 
 
     # Entrainer le modèle
