@@ -7,7 +7,7 @@ from sklearn.calibration import CalibrationDisplay
 
 
 
-def ROC_plot (y, y_prob):
+def ROC_plot (y, y_prob, model):
     RocCurveDisplay.from_predictions(
     y,
     y_prob,
@@ -24,10 +24,12 @@ def ROC_plot (y, y_prob):
     plt.title("But-vs-NBut ROC curves")
     plt.legend()
     plt.show()
+    plt.savefig(f"../figures/ROC_curve_{model}.png")
+    return AUC
     
 
 
-def Centiles_plot (y, y_prob):
+def Centiles_plot (y, y_prob, model):
     
     centiles = np.percentile(y_prob, np.arange(0, 101, 10))  # Centiles de 0 à 100 par pas de 10
 
@@ -41,7 +43,6 @@ def Centiles_plot (y, y_prob):
         # Filtrer les probabilités dans l'intervalle du centile actuel
         indices = np.where((y_prob >= lower_bound) & (y_prob <= upper_bound))
         # Calculer le taux de buts pour ce groupe
-        
         goal_rate = (sum(y.iloc[indices]) / len(y.iloc[indices]))*100
         
         # Stocker le taux de buts et le centile correspondant
@@ -56,11 +57,10 @@ def Centiles_plot (y, y_prob):
     plt.xlim(100,0)
     plt.xticks(np.arange(0, 101, 10))
     plt.yticks(np.arange(0, 101, 10))
-
-
     plt.show()
+    plt.savefig(f"../figures/Centiles_plot_{model}.png")
 
-def cumulative_centiles_plot(y, y_prob):
+def cumulative_centiles_plot(y, y_prob, model):
 
     n=len(y_prob)
     x_axis=np.arange(n)[::-1]*(100/n)
@@ -76,7 +76,9 @@ def cumulative_centiles_plot(y, y_prob):
     plt.xlim(100,0)
     plt.xticks(np.arange(0, 101, 10))
     plt.yticks(np.arange(0, 101, 10))
+    plt.savefig(f"../figures/cumulative_centiles_plot_{model}.png")
 
 
-def calibrate_display(classifier, x_val, y_val, n_bin):
-    CalibrationDisplay.from_estimator(classifier, x_val, y_val, n_bins=n_bin)
+def calibrate_display(classifier, x_val, y_val, n_bin, model):
+    disp = CalibrationDisplay.from_estimator(classifier, x_val, y_val, n_bins=n_bin, name=model)
+    plt.savefig(f"../figures/calibrate_display_{model}.png")
