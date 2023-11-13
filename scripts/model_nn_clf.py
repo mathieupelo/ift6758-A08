@@ -33,7 +33,7 @@ from sklearn.calibration import calibration_curve, CalibrationDisplay
 from feature_engineering import preprocessing
 from Basic_model import Centiles_plot, ROC_plot, cumulative_centiles_plot, calibrate_display
 
-def RunCNN():
+def RunANN():
     # Set seed
     seed=8
     torch.manual_seed(seed) 
