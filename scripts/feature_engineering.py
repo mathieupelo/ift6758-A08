@@ -1,7 +1,10 @@
+from comet_ml import Experiment
 import re
+import os
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
+
 
 def distance_goal(x: float, y: float):
     """
@@ -232,3 +235,24 @@ def preprocessing(df: pd.DataFrame, target: str):
     X[cols_to_standardize] = features
 
     return X, y
+
+def comet_log_dataframe_profile():
+    experiment = Experiment(
+        api_key=os.environ.get('COMET_API_KEY'),
+        project_name='Milestone_2',
+        workspace='me-pic',
+    )
+
+    experiment.set_name("Dataframe")
+
+    data = pd.read_csv('../data/derivatives/dataframe_milestone_2.csv')
+    
+    subset_df = data[data['gameId'] == 2017021065]
+
+    experiment.log_dataframe_profile(
+        subset_df,
+        name='wpg_v_wsh_2017021065',
+        dataframe_format='csv'
+    )
+
+    experiment.end()
