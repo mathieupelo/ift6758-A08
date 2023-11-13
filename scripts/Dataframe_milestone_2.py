@@ -1,33 +1,5 @@
-import os
-import json
 import pandas as pd
-from tqdm import tqdm
 import math
-
-def load_all_seasons(base_path):
-    all_data = {}
-    csv_path = 'all_seasons_data.csv'
-
-    if os.path.exists(csv_path):
-        print("Chargement des données depuis le fichier CSV existant.")
-        return pd.read_csv(csv_path)
-    
-    seasons = [s for s in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, s))]
-
-    for season in tqdm(seasons, desc='Seasons', position=0):
-        season_path = os.path.join(base_path, season)
-        json_files = [f for f in os.listdir(season_path) if f.endswith('.json')]
-
-        for json_file in tqdm(json_files, desc=f'Loading {season}', position=1, leave=False):
-            json_path = os.path.join(season_path, json_file)
-            with open(json_path, 'r') as f:
-                game_data = json.load(f)
-                f.close()
-            game_id = json_file.split('.')[0]
-            all_data[game_id] = game_data
-    
-    df = pd.DataFrame.from_dict(all_data)
-    return df
 
 # Fonction pour calculer la distance euclidienne entre deux points
 def calculate_distance(x1, y1, x2, y2):
@@ -35,13 +7,12 @@ def calculate_distance(x1, y1, x2, y2):
 
 def find_previous_event(play_data, current_index, current_period, current_period_time):
     if current_index == 0:
-        return None  # Pas d'événement précédent pour le premier événement
+        return None
     
     prev_event = play_data[current_index - 1]
     prev_event_period = prev_event['about']['period']
     prev_event_period_time = prev_event['about']['periodTime']
 
-    # Sacahnt que period_time est une chaîne de format "MM:SS"
     current_period_time_seconds = int(current_period_time.split(':')[0]) * 60 + int(current_period_time.split(':')[1])
     prev_event_period_time_seconds = int(prev_event_period_time.split(':')[0]) * 60 + int(prev_event_period_time.split(':')[1])
 
@@ -63,15 +34,76 @@ def find_previous_event(play_data, current_index, current_period, current_period
     }
     return prev_event_data
 
-# Ajout d'une nouvelle fonction pour identifier la dernière pénalité
-def find_previous_penalty(play_data, current_index):
-    for i in range(current_index - 1, -1, -1):  # Commence par l'événement précédent et remonter
-        if play_data[i]['result']['eventTypeId'] == 'PENALTY':
-            return play_data[i]
-    return None  # Aucune pénalité trouvée
+def handle_goal_event(play_data, current_index, power_play_status, scoring_team_id):
+    """
+    Gère les événements de but pour vérifier et annuler les pénalités mineures.
+    """
+
+    conceding_team = 'home_team' if scoring_team_id != play_data[current_index]['team']['id'] else 'away_team'
+
+    if power_play_status[conceding_team]:
+        power_play_status[conceding_team].sort(key=lambda x: x['start_time'])
+
+        for penalty in power_play_status[conceding_team]:
+            if penalty['duration'] == 120:  # 2 minutes en secondes
+                power_play_status[conceding_team].remove(penalty)
+                break
 
 
+def update_power_play_status(play_data, current_index, power_play_status, home_team_id, away_team_id):
+    current_event = play_data[current_index]
+    event_type = current_event['result']['eventTypeId']
+    
+    current_period_time = int(current_event['about']['periodTime'].split(':')[0]) * 60 + int(current_event['about']['periodTime'].split(':')[1])
+
+    if event_type == "GOAL" and 'team' in current_event:
+        scoring_team_id = current_event['team']['id']
+        handle_goal_event(play_data, current_index, power_play_status, scoring_team_id)
+
+    if event_type == 'PENALTY' and 'team' in current_event:
+        team_id = current_event['team']['id']
+        penalty_duration = current_event['result']['penaltyMinutes']
+        penalized_team = 'home_team' if team_id == home_team_id else 'away_team'
+
+        start_time = int(current_period_time)
+        penalty_duration = current_event['result']['penaltyMinutes']
+
+        if power_play_status[penalized_team] is None:
+            power_play_status[penalized_team] = [{'start_time': start_time, 'duration': penalty_duration * 60}]
+        else:
+            power_play_status[penalized_team].append({'start_time': start_time, 'duration': penalty_duration * 60})
+            
+    for team, penalties in power_play_status.items():
+        if penalties:
+            power_play_status[team] = [p for p in penalties if current_period_time - p['start_time'] < p['duration']]
+    
+
+    
+
+def calculate_skater_count(power_play_status, home_team_name, away_team_name):
+    standard_skater_count = 5
+    home_team_skaters = standard_skater_count
+    away_team_skaters = standard_skater_count
+
+    for team_name, penalties in power_play_status.items():
+        if penalties:  # Si l'équipe a des pénalités
+            penalty_count = len(penalties)
+            if team_name == 'home_team':
+                home_team_skaters = max(3, standard_skater_count - penalty_count)
+            else:
+                away_team_skaters = max(3, standard_skater_count - penalty_count)
+                
+    print(f"Nombre de joueurs après calcul: Maison - {home_team_skaters}, Visiteur - {away_team_skaters}")
+
+
+    return {
+        home_team_name: home_team_skaters,
+        away_team_name: away_team_skaters
+    }
+    
+    
 def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
+  
     temp_data = {
         'gameId': [], 'evt_idx': [], 'prd': [], 'prdTime': [], 'team': [],
         'goalFlag': [], 'shotCategory': [], 'coord_x': [], 'coord_y': [],
@@ -79,7 +111,9 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
         'visitorTeam': [], 'hostTeam': [], 'homeRinkSide': [], 'awayRinkSide': [],
         # Ces caractéristiques sont pour l'ingénierie des caractéristiques 2 du Milestone 2
         'last_event_type': [], 'last_event_x': [], 'last_event_y': [],
-        'time_since_last_event': [], 'distance_from_last_event': []
+        'time_since_last_event': [], 'distance_from_last_event': [],
+        'power_play_time_elapsed': [], 'home_team_skater_count': [],
+        'away_team_skater_count': []
     }
 
     for idx in range(df.shape[1]):
@@ -96,7 +130,18 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
             home_rink_side = 'N/A'
             away_rink_side = 'N/A'
             
+        home_team_name = game_details['gameData']['teams']['home']['name']
+        away_team_name = game_details['gameData']['teams']['away']['name']
+        power_play_status = {'home_team': None, 'away_team': None}
+
         for event_index, single_event in enumerate(play_data):
+            
+            period_time_str = single_event['about']['periodTime']
+            minutes, seconds = map(int, period_time_str.split(':'))
+            period_time= int(minutes * 60 + seconds)
+
+            update_power_play_status(play_data, event_index, power_play_status, home_team_name, away_team_name)
+
             evt_type = single_event['result']['eventTypeId']
             if evt_type not in ["SHOT", "GOAL"]:
                 continue
@@ -169,12 +214,18 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
                 # Si prev_event_data est None (c'est le premier événement), on ajoute des valeurs NA.
                 for key in ['last_event_type', 'last_event_x', 'last_event_y', 'time_since_last_event', 'distance_from_last_event']:
                     temp_data[key].append(pd.NA)
-    
-    for key, value in temp_data.items():
-        if len(value) != len(temp_data['gameId']):
-            print(f"Length mismatch in {key}: {len(value)} vs {len(temp_data['gameId'])}")
+                    
+            elapsed_time = 0
+            for status in power_play_status.values():
+                if status:
+                    for penalty in status:
+                        elapsed_time = max(elapsed_time, period_time - penalty['start_time'])
+            temp_data['power_play_time_elapsed'].append(elapsed_time)
 
+            skater_count = calculate_skater_count(power_play_status, home_team_name, away_team_name)
+            temp_data['home_team_skater_count'].append(skater_count[home_team_name])
+            temp_data['away_team_skater_count'].append(skater_count[away_team_name])
+            
     output_df = pd.DataFrame(temp_data)
-    
     output_df.to_csv('../data/derivatives/dataframe_milestone_2.csv', index=False)
     return output_df
