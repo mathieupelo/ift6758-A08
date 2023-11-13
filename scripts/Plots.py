@@ -24,6 +24,7 @@ def ROC_plot (y, y_prob):
     plt.title("But-vs-NBut ROC curves")
     plt.legend()
     plt.show()
+    return AUC
     
 
 
