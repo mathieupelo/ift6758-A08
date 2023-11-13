@@ -278,8 +278,7 @@ def calculate_skater_count(power_play_status, home_team_name, away_team_name):
 def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
   
     temp_data = {
-        'gameId': [],
-        
+        'gameId': [], 'coord_x': [], 'coord_y': [],'shotCategory': [],'goalFlag': [],
         'last_event_type': [], 'last_event_x': [], 'last_event_y': [],
         'time_since_last_event': [], 'distance_from_last_event': [],
         'power_play_time_elapsed': [], 'home_team_skater_count': [],
@@ -311,6 +310,10 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
             # Ajout des données de l'événement précédent
             current_period = single_event['about']['period']
             current_period_time = single_event['about']['periodTime']
+            temp_data['shotCategory'].append(single_event['result'].get('secondaryType', pd.NA))
+            temp_data['coord_x'].append(single_event['coordinates'].get('x', pd.NA))
+            temp_data['coord_y'].append(single_event['coordinates'].get('y', pd.NA))
+            temp_data['goalFlag'].append(evt_type == "GOAL")
                         
             prev_event_data = find_previous_event(play_data, event_index, current_period, current_period_time)
 
@@ -388,14 +391,14 @@ def preprocessing(df: pd.DataFrame, target: str):
     # Supprime les lignes avec des NaN
     df = df.dropna()
 
-    df = df.drop(['gameId'])
+    df = df.drop(columns=['gameId'])
 
     # Colonnes One-Hot Encoding
     cols_to_encode = ['shotCategory', 'last_event_type']
     df_encoded = pd.get_dummies(df[cols_to_encode], dtype=int)
     df = pd.concat([df, df_encoded], axis=1).drop(cols_to_encode, axis=1)
     # Colonnes à binariser
-    cols_to_binarize = ['noGoalie', 'rebond']
+    cols_to_binarize = ['rebond']
     for col in cols_to_binarize:
         df[col] = LabelEncoder().fit_transform(df[col])
 
