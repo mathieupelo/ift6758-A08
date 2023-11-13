@@ -92,9 +92,6 @@ def calculate_skater_count(power_play_status, home_team_name, away_team_name):
                 home_team_skaters = max(3, standard_skater_count - penalty_count)
             else:
                 away_team_skaters = max(3, standard_skater_count - penalty_count)
-                
-    print(f"Nombre de joueurs après calcul: Maison - {home_team_skaters}, Visiteur - {away_team_skaters}")
-
 
     return {
         home_team_name: home_team_skaters,
