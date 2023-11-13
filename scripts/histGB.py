@@ -25,7 +25,7 @@ def RunHistGB():
     experiment.set_name('HistGradientBoosting')
 
     print("Loading data...")
-    df = pd.read_csv('../data/derivatives/dataframe_milestone_2.csv')
+    df = pd.read_csv('../data/derivatives/train_data.csv')
     X, y = preprocessing (df, 'goalFlag')
     CATEGORICAL_FEATURES = ["prd", "noGoalie", "rebond", "shotCategory_Backhand", "shotCategory_Deflected", "shotCategory_Slap Shot", "shotCategory_Snap Shot", "shotCategory_Tip-In", "shotCategory_Wrap-around", "shotCategory_Wrist Shot", "last_event_type_BLOCKED_SHOT", "last_event_type_FACEOFF", "last_event_type_GIVEAWAY", "last_event_type_GOAL", "last_event_type_HIT", "last_event_type_MISSED_SHOT", "last_event_type_PENALTY", "last_event_type_SHOT", "last_event_type_TAKEAWAY"]
 
