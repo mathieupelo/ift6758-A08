@@ -1,6 +1,6 @@
 import os
 import sys
-import timeit
+import pickle
 current_dir = os.path.abspath(os.getcwd())
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(os.path.join(parent_dir, 'scripts'))
@@ -63,8 +63,10 @@ def RunHistGB():
     cumulative_centiles_plot(pd.Series(y_val), pd.Series(y_pred_proba[:,1]), 'HistGradientBoosting')
     calibrate_display(clf, X_val, y_val, n_bin=10, model='HistGradientBoosting')
 
-    log_model(
-        experiment,
-        'HistGradientBoosting',
-        clf,
-    )
+
+    # Dump modele
+    with open("../data/histGBmodel.pickle", "wb") as outfile:
+        pickle.dump(clf, outfile)
+        outfile.close()
+
+    experiment.log_model('HistGradientBoosting', '../data/histGBmodel.pickle')
