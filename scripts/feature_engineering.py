@@ -3,6 +3,7 @@ import re
 import os
 import numpy as np
 import pandas as pd
+import math
 from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
 
 
@@ -124,6 +125,7 @@ def create_features1(data: pd.DataFrame, pattern: str, outname: str):
         data = data[data['gameId'].astype(str).str.match(pattern)]
         data.reset_index(inplace=True)
 
+
     # Créer la variable distance_goal
     new_data['distance_goal'] = distance_goal(data['coord_x'], data['coord_y'])
     # Créer la variable angle_goal
@@ -132,15 +134,14 @@ def create_features1(data: pd.DataFrame, pattern: str, outname: str):
     new_data['is_goal'] = is_goal(data)
     # Créer la variable empty_goal
     new_data['empty_goal'] = empty_goal(data)
-
-    # Enlever les lignes avec des valeurs manquantes
-    new_data.dropna(inplace=True)
+    
+    new_data['empty_goal'].fillna(0, inplace=True)
 
     new_data.to_csv(f'../data/derivatives/{outname}', index=False)
     
     
 
-def create_features2(data: pd.DataFrame, pattern: str):
+def create_features2(data: pd.DataFrame, data_milestone_1: pd.DataFrame, pattern: str):
     """
     Fonction pour ajouter de nouvelles caractéristiques aux données existantes et
     sauvegarder le résultat dans le même fichier CSV.
@@ -153,13 +154,18 @@ def create_features2(data: pd.DataFrame, pattern: str):
         Regex pour sélectionner certaines données. Si None, toutes les données dans data
         seront utilisées.
     """
+    # Isoler les données des saisons régulières de 2016-2017 à 2019-2020
+    pattern = re.compile(pattern)
+    if pattern is not None:
+        data = data[data['gameId'].astype(str).str.match(pattern)]
+        data.reset_index(inplace=True)
 
     data = data.copy()
 
     # Ajout des nouvelles caractéristiques au DataFrame
-    data['game_seconds'] = data['prdTime'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
-    data['shot_distance'] = distance_goal(data['coord_x'], data['coord_y'])
-    data['shot_angle'] = data.apply(lambda row: angle_goal(row['coord_x'], row['coord_y']), axis=1)
+    data['game_seconds'] = data_milestone_1['prdTime'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
+    data['shot_distance'] = distance_goal(data_milestone_1['coord_x'], data_milestone_1['coord_y'])
+    data['shot_angle'] = data_milestone_1.apply(lambda row: angle_goal(row['coord_x'], row['coord_y']), axis=1)
     data['rebond'] = (data['last_event_type'] == 'SHOT')
     previous_shot_angle = angle_goal(data['last_event_x'], data['last_event_y'])
     data['changement_angle_tir'] = np.where(data['rebond'], previous_shot_angle + data['shot_angle'], 0)
@@ -170,6 +176,188 @@ def create_features2(data: pd.DataFrame, pattern: str):
     data['vitesse'].fillna(0, inplace=True)
 
     return data
+
+
+# Fonction pour calculer la distance euclidienne entre deux points
+def calculate_distance(x1, y1, x2, y2):
+    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+def find_previous_event(play_data, current_index, current_period, current_period_time):
+    if current_index == 0:
+        return None
+    
+    prev_event = play_data[current_index - 1]
+    prev_event_period = prev_event['about']['period']
+    prev_event_period_time = prev_event['about']['periodTime']
+
+    current_period_time_seconds = int(current_period_time.split(':')[0]) * 60 + int(current_period_time.split(':')[1])
+    prev_event_period_time_seconds = int(prev_event_period_time.split(':')[0]) * 60 + int(prev_event_period_time.split(':')[1])
+
+    # Calcul le temps écoulé entre les événements
+    if current_period == prev_event_period:
+        time_since_last_event = current_period_time_seconds - prev_event_period_time_seconds
+    else:
+        # Calcul le temps restant dans la période précédente et ajout le temps écoulé dans la période actuelle
+        # Ceci suppose que chaque période est de 20 minutes. 
+        # Peut-être à ajuster si nécessaire pour les périodes supplémentaires / prolongations.
+        time_since_last_event = (20 * 60 - prev_event_period_time_seconds) + current_period_time_seconds
+
+    prev_event_data = {
+        'last_event_type': prev_event['result']['eventTypeId'],
+        'last_event_x': prev_event['coordinates'].get('x', pd.NA),
+        'last_event_y': prev_event['coordinates'].get('y', pd.NA),
+        'time_since_last_event': time_since_last_event if time_since_last_event > 0 else pd.NA,
+        'distance_from_last_event': pd.NA
+    }
+    return prev_event_data
+
+
+def handle_goal_event(play_data, current_index, power_play_status, scoring_team_id):
+    """
+    Gère les événements de but pour vérifier et annuler les pénalités mineures.
+    """
+
+    conceding_team = 'home_team' if scoring_team_id != play_data[current_index]['team']['id'] else 'away_team'
+
+    if power_play_status[conceding_team]:
+        power_play_status[conceding_team].sort(key=lambda x: x['start_time'])
+
+        for penalty in power_play_status[conceding_team]:
+            if penalty['duration'] == 120:  # 2 minutes en secondes
+                power_play_status[conceding_team].remove(penalty)
+                break
+
+
+def update_power_play_status(play_data, current_index, power_play_status, home_team_id, away_team_id):
+    current_event = play_data[current_index]
+    event_type = current_event['result']['eventTypeId']
+    
+    current_period_time = int(current_event['about']['periodTime'].split(':')[0]) * 60 + int(current_event['about']['periodTime'].split(':')[1])
+
+    if event_type == "GOAL" and 'team' in current_event:
+        scoring_team_id = current_event['team']['id']
+        handle_goal_event(play_data, current_index, power_play_status, scoring_team_id)
+
+    if event_type == 'PENALTY' and 'team' in current_event:
+        team_id = current_event['team']['id']
+        penalty_duration = current_event['result']['penaltyMinutes']
+        penalized_team = 'home_team' if team_id == home_team_id else 'away_team'
+
+        start_time = int(current_period_time)
+        penalty_duration = current_event['result']['penaltyMinutes']
+
+        if power_play_status[penalized_team] is None:
+            power_play_status[penalized_team] = [{'start_time': start_time, 'duration': penalty_duration * 60}]
+        else:
+            power_play_status[penalized_team].append({'start_time': start_time, 'duration': penalty_duration * 60})
+            
+    for team, penalties in power_play_status.items():
+        if penalties:
+            power_play_status[team] = [p for p in penalties if current_period_time - p['start_time'] < p['duration']]
+    
+
+def calculate_skater_count(power_play_status, home_team_name, away_team_name):
+    standard_skater_count = 5
+    home_team_skaters = standard_skater_count
+    away_team_skaters = standard_skater_count
+
+    for team_name, penalties in power_play_status.items():
+        if penalties:  # Si l'équipe a des pénalités
+            penalty_count = len(penalties)
+            if team_name == 'home_team':
+                home_team_skaters = max(3, standard_skater_count - penalty_count)
+            else:
+                away_team_skaters = max(3, standard_skater_count - penalty_count)
+
+    return {
+        home_team_name: home_team_skaters,
+        away_team_name: away_team_skaters
+    }
+    
+    
+def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
+  
+    temp_data = {
+        'gameId': [],
+        
+        'last_event_type': [], 'last_event_x': [], 'last_event_y': [],
+        'time_since_last_event': [], 'distance_from_last_event': [],
+        'power_play_time_elapsed': [], 'home_team_skater_count': [],
+        'away_team_skater_count': []
+    }
+
+    for idx in range(df.shape[1]):
+        play_data = df.iloc[:, idx]["liveData"]["plays"]["allPlays"]
+        game_details = df.iloc[:, idx]
+                 
+        home_team_name = game_details['gameData']['teams']['home']['name']
+        away_team_name = game_details['gameData']['teams']['away']['name']
+        power_play_status = {'home_team': None, 'away_team': None}
+
+        for event_index, single_event in enumerate(play_data):
+            
+            period_time_str = single_event['about']['periodTime']
+            minutes, seconds = map(int, period_time_str.split(':'))
+            period_time= int(minutes * 60 + seconds)
+
+            update_power_play_status(play_data, event_index, power_play_status, home_team_name, away_team_name)
+
+            evt_type = single_event['result']['eventTypeId']
+            if evt_type not in ["SHOT", "GOAL"]:
+                continue
+            
+            temp_data['gameId'].append(game_details.name)
+            
+            # Ajout des données de l'événement précédent
+            current_period = single_event['about']['period']
+            current_period_time = single_event['about']['periodTime']
+                        
+            prev_event_data = find_previous_event(play_data, event_index, current_period, current_period_time)
+
+            if prev_event_data:
+                #coordonnées du tir actuel pour calculer la distance
+                current_x = single_event['coordinates'].get('x', pd.NA)
+                current_y = single_event['coordinates'].get('y', pd.NA)
+
+                # Calcul des données temporelles et spatiales si les données sont complètes
+                if prev_event_data['last_event_x'] is not pd.NA and prev_event_data['last_event_y'] is not pd.NA and current_x is not pd.NA and current_y is not pd.NA:
+                    prev_event_data['distance_from_last_event'] = calculate_distance(
+                        prev_event_data['last_event_x'], prev_event_data['last_event_y'],
+                        current_x, current_y)
+            
+                for key in ['last_event_type', 'last_event_x', 'last_event_y', 'time_since_last_event', 'distance_from_last_event']:
+                    temp_data[key].append(prev_event_data.get(key, pd.NA))
+            else:
+                # Si prev_event_data est None (c'est le premier événement), on ajoute des valeurs NA.
+                for key in ['last_event_type', 'last_event_x', 'last_event_y', 'time_since_last_event', 'distance_from_last_event']:
+                    temp_data[key].append(pd.NA)
+                    
+            elapsed_time = 0
+            for status in power_play_status.values():
+                if status:
+                    for penalty in status:
+                        elapsed_time = max(elapsed_time, period_time - penalty['start_time'])
+                        
+            temp_data['power_play_time_elapsed'].append(elapsed_time)
+
+            skater_count = calculate_skater_count(power_play_status, home_team_name, away_team_name)
+            temp_data['home_team_skater_count'].append(skater_count[home_team_name])
+            temp_data['away_team_skater_count'].append(skater_count[away_team_name])
+            
+    output_df = pd.DataFrame(temp_data)
+    return output_df
+
+def fusion_features(engineering1, engineering2):
+    
+    if len(engineering1) != len(engineering2):
+        raise ValueError("Les DataFrames doivent avoir le même nombre de lignes")
+    
+    engineering2['distance_shot'] = engineering1['distance_goal']
+    engineering2['angle_shot'] = engineering1['angle_goal']
+    engineering2['is_goal'] = engineering1['is_goal']
+    engineering2['empty_net'] = engineering1['empty_goal']  
+        
+    return engineering2
 
 
 def preprocessing(df: pd.DataFrame, target: str):
@@ -199,6 +387,8 @@ def preprocessing(df: pd.DataFrame, target: str):
 
     # Supprime les lignes avec des NaN
     df = df.dropna()
+
+    df = df.drop(['gameId'])
 
     # Colonnes One-Hot Encoding
     cols_to_encode = ['shotCategory', 'last_event_type']
