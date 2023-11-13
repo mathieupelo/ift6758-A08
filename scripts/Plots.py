@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import RocCurveDisplay , roc_curve, auc
+from sklearn.calibration import CalibrationDisplay
 
 
 
@@ -52,6 +53,7 @@ def Centiles_plot (y, y_prob):
     plt.ylabel("Taux de Buts")
     plt.title("Taux de Buts en fonction du Centile de Probabilité de Tir")
     plt.grid(True)
+    plt.xlim(100,0)
     plt.xticks(np.arange(0, 101, 10))
     plt.yticks(np.arange(0, 101, 10))
 
@@ -59,32 +61,22 @@ def Centiles_plot (y, y_prob):
     plt.show()
 
 def cumulative_centiles_plot(y, y_prob):
-    centiles = np.percentile(y_prob, np.arange(0, 101, 10))  # Centiles de 0 à 100 par pas de 10
 
-    # listes pour stocker les taux de buts et les centiles correspondants
-    cumulative_goal_proportion = [0]
-    total_goals = sum(y)
-    cumulative_goals = 0
-    # les probabilités en groupes basés sur les centiles
-    for i in range(10):
-        lower_bound = centiles[i]
-        upper_bound = centiles[i + 1]
-        
-        # Filtrer les probabilités dans la plage du centile actuel
-        indices = np.where((y_prob >= lower_bound) & (y_prob <= upper_bound))
-        # Calculer le cumule de buts pour ce groupe
-        
-        cumulative_goals += sum(y.iloc[indices])
-        
-        # Stocker la proportion du cumule de buts 
-        cumulative_goal_proportion.append((cumulative_goals / total_goals)*100)
+    n=len(y_prob)
+    x_axis=np.arange(n)[::-1]*(100/n)
+    reverse_prob=y_prob[::-1]
+    reverse_prob[::-1].sort()
+    cum_percentile=np.cumsum(reverse_prob)*100
 
-    # Tracer le graphique
-
-    plt.plot(np.arange(0, 101, 10), cumulative_goal_proportion, linestyle='-')
+    plt.plot(x_axis ,cum_percentile/sum(y_prob))
     plt.xlabel("Centile de la Probabilité de Tir")
     plt.ylabel("Proportion")
     plt.title(" cumulatif des buts en %")
     plt.grid(True)
+    plt.xlim(100,0)
     plt.xticks(np.arange(0, 101, 10))
     plt.yticks(np.arange(0, 101, 10))
+
+
+def calibrate_display(classifier, x_val, y_val, n_bin):
+    CalibrationDisplay.from_estimator(classifier, x_val, y_val, n_bins=n_bin)

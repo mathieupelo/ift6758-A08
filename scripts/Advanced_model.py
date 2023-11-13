@@ -165,7 +165,9 @@ d'hyperparamètres pour essayer de trouver le modèle le plus performant avec to
  Incluez un lien vers l'entrée comet.ml appropriée pour cette expérience et enregistrez ce modèle dans le registre des modèles.
 """
 # Latin Hypercube search -> Hyperparameter
+def find_best_xgb_hyperparams():
 
+    return
 
 """
 Enfin, explorez l'utilisation de certaines techniques de sélection de caractéristiques pour voir si vous pouvez simplifier vos caractéristiques d'entrée. 
