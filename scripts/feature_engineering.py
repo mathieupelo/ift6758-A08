@@ -200,9 +200,6 @@ def preprocessing(df: pd.DataFrame, target: str):
     # Supprime les lignes avec des NaN
     df = df.dropna()
 
-    # Colonnes à supprimer
-    cols_to_rm = ['team', 'shotBy', 'goalieName', 'visitorTeam', 'hostTeam', 'homeRinkSide', 'awayRinkSide']
-    df = df.drop(cols_to_rm, axis=1)
     # Colonnes One-Hot Encoding
     cols_to_encode = ['shotCategory', 'last_event_type']
     df_encoded = pd.get_dummies(df[cols_to_encode], dtype=int)
@@ -211,10 +208,6 @@ def preprocessing(df: pd.DataFrame, target: str):
     cols_to_binarize = ['noGoalie', 'rebond']
     for col in cols_to_binarize:
         df[col] = LabelEncoder().fit_transform(df[col])
-
-    # Supprime les colonnes redondantes
-    cols_to_drop = ['gameId', 'evt_idx', 'prdTime']
-    df = df.drop(cols_to_drop, axis=1)
 
     # Extraction de la variable cible
     y = df[target]
@@ -228,7 +221,8 @@ def preprocessing(df: pd.DataFrame, target: str):
         'coord_x', 'coord_y', 'last_event_x', 'last_event_y',  
         'time_since_last_event', 'distance_from_last_event', 
         'game_seconds', 'shot_distance', 'shot_angle', 
-        'changement_angle_tir', 'vitesse']
+        'changement_angle_tir', 'vitesse', 'power_play_time_elapsed', 
+        'home_team_skater_count', 'away_team_skater_count']
     features = X[cols_to_standardize]
     scaler = StandardScaler().fit(features.values)
     features = scaler.transform(features.values)
