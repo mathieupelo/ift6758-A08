@@ -136,6 +136,10 @@ def create_features1(data: pd.DataFrame, pattern: str, outname: str):
     new_data['empty_goal'] = empty_goal(data)
     
     new_data['empty_goal'].fillna(0, inplace=True)
+    #new_data.dropna(inplace=True)
+    new_data['is_goal'].fillna(0, inplace=True)
+    new_data['angle_goal'].fillna(0, inplace=True)
+    new_data['distance_goal'].fillna(0, inplace=True)
 
     new_data.to_csv(f'../data/derivatives/{outname}', index=False)
     
