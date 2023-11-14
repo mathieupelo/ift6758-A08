@@ -7,78 +7,98 @@ from sklearn.calibration import CalibrationDisplay
 
 
 
-def ROC_plot (y, y_prob, model):
-    RocCurveDisplay.from_predictions(
-    y,
-    y_prob,
-    name="Chance d'avoir un but",
-    color="darkorange",
-    plot_chance_level=True,
-    )
-    fpr, tpr, _ = roc_curve(np.array(y), y_prob, pos_label=1)
-    AUC = auc(fpr, tpr)
+def ROC_plot (y, Y):
+    curves = []
+    AUC = {}
+    fig, ax = plt.subplots()
+    for model, pred, color, chance_lev in Y :
+        curves.append(model) 
+        RocCurveDisplay.from_predictions(
+        y,
+        pred,
+        name= model,
+        color= color,
+        plot_chance_level= chance_lev,
+        ax= ax,
+        )
+        fpr, tpr, _ = roc_curve(np.array(y), pred, pos_label=1)
+        AUC[model]= auc(fpr, tpr) 
     print ( f'AUC metric : {AUC}')
-    plt.axis("square")
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("But-vs-NBut ROC curves")
-    plt.legend()
+    ax.set_xlabel("False Positive Rate")
+    ax.set_ylabel("True Positive Rate")
+    ax.set_title("But-vs-NBut ROC curves")
+    ax.legend()
+    plt.savefig(f"../figures/ROC_curve_{[model for model in curves]}.png")
     plt.show()
-    plt.savefig(f"../figures/ROC_curve_{model}.png")
+    
     return AUC
     
 
 
-def Centiles_plot (y, y_prob, model):
-    
-    centiles = np.percentile(y_prob, np.arange(0, 101, 10))  # Centiles de 0 à 100 par pas de 10
+def Centiles_plot(y, Y):
 
-    # listes pour stocker les taux de buts et les centiles correspondants
-    taux_buts = [0]
-    # les probabilités en groupes basés sur les centiles
-    for i in range(10):
-        lower_bound = centiles[i]
-        upper_bound = centiles[i + 1]
-        
-        # Filtrer les probabilités dans l'intervalle du centile actuel
-        indices = np.where((y_prob >= lower_bound) & (y_prob <= upper_bound))
-        # Calculer le taux de buts pour ce groupe
-        goal_rate = (sum(y.iloc[indices]) / len(y.iloc[indices]))*100
-        
-        # Stocker le taux de buts et le centile correspondant
-        taux_buts.append(goal_rate)
+    fig, ax = plt.subplots()
+    curves = []
+    for model, pred, _, __ in Y:
+        centiles = np.percentile(pred, np.arange(0, 101, 5))  # Centiles de 0 à 100 par pas de 10
+        taux_buts = []
+        curves.append(model)
+        for i in range(20):
+             
+            lower_bound = centiles[i]
+            upper_bound = centiles[i + 1]
+            
+            indices = np.where((pred >= lower_bound) & (pred <= upper_bound))
+            goal_rate = (sum(y.iloc[indices]) / len(y.iloc[indices])) * 100
+            taux_buts.append(goal_rate)
 
-    # Tracer le graphique
-    plt.plot(np.arange(0, 101, 10), taux_buts, linestyle='-')
-    plt.xlabel("Centile de la Probabilité de Tir")
-    plt.ylabel("Taux de Buts")
-    plt.title("Taux de Buts en fonction du Centile de Probabilité de Tir")
-    plt.grid(True)
-    plt.xlim(100,0)
-    plt.xticks(np.arange(0, 101, 10))
-    plt.yticks(np.arange(0, 101, 10))
+        ax.plot(np.arange(0, 100, 5), taux_buts, linestyle='-', label = model)
+    ax.set_xlabel("Centile de la Probabilité de Tir")
+    ax.set_ylabel("Taux de Buts")
+    ax.set_title("Taux de Buts en fonction du Centile de Probabilité de Tir")
+    ax.grid(True)
+    ax.set_xlim(100, 0)
+    ax.set_xticks(np.arange(0, 101, 10))
+    ax.set_yticks(np.arange(0, 101, 10))
+    ax.legend()
+    plt.savefig(f"../figures/Centiles_plot_{[model for model in curves]}.png")
     plt.show()
-    plt.savefig(f"../figures/Centiles_plot_{model}.png")
 
-def cumulative_centiles_plot(y, y_prob, model):
+def cumulative_centiles_plot(y, Y):
+    n = len(y)
+    curves = []
+    fig, ax = plt.subplots()
+    for model, pred, _, __ in Y:
+        curves.append(model)
+        x_axis = np.arange(n)[::-1] * (100 / n)
+        reverse_prob = pred[::-1]
+        reverse_prob[::-1].sort()
+        cum_percentile = np.cumsum(reverse_prob) * 100
+        ax.plot(x_axis, cum_percentile / sum(pred), label = model)
+    ax.set_xlabel("Centile de la Probabilité de Tir")
+    ax.set_ylabel("Proportion")
+    ax.set_title(" cumulatif des buts en %")
+    ax.grid(True)
+    ax.set_xlim(100, 0)
+    ax.set_xticks(np.arange(0, 101, 10))
+    ax.set_yticks(np.arange(0, 101, 10))
+    ax.legend()
+    plt.savefig(f"../figures/cumulative_centiles_plot_{[model for model in curves]}.png")
+    plt.show()
 
-    n=len(y_prob)
-    x_axis=np.arange(n)[::-1]*(100/n)
-    reverse_prob=y_prob[::-1]
-    reverse_prob[::-1].sort()
-    cum_percentile=np.cumsum(reverse_prob)*100
 
-    plt.plot(x_axis ,cum_percentile/sum(y_prob))
-    plt.xlabel("Centile de la Probabilité de Tir")
-    plt.ylabel("Proportion")
-    plt.title(" cumulatif des buts en %")
-    plt.grid(True)
-    plt.xlim(100,0)
-    plt.xticks(np.arange(0, 101, 10))
-    plt.yticks(np.arange(0, 101, 10))
-    plt.savefig(f"../figures/cumulative_centiles_plot_{model}.png")
+def calibrate_display(classifier, y_val, n_bin = 40):
+    fig, ax = plt.subplots()
+    curves = []
+    for model, X, name in classifier: 
+        curves.append(name)
+        if len(model) != 2:
 
-
-def calibrate_display(classifier, x_val, y_val, n_bin, model):
-    disp = CalibrationDisplay.from_estimator(classifier, x_val, y_val, n_bins=n_bin, name=model)
-    plt.savefig(f"../figures/calibrate_display_{model}.png")
+            CalibrationDisplay.from_estimator(model[0], X, y_val, n_bins=n_bin, name=name, ax= ax )
+            
+        else :
+            CalibrationDisplay.from_predictions(model[0], model[1], n_bins= n_bin, name= name, ax= ax)
+        
+    ax.legend()
+    plt.savefig(f"../figures/calibrate_display_{curves}.png")
+    plt.show()
