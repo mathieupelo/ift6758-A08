@@ -155,7 +155,7 @@ def runRegression():
     experiment_2.set_name('Logistic_reg_dist_angle')
     experiment_2.log_model('Logistic_reg_dist-angle', '../models/Logistic_reg_dist-angle.pickle')
     experiment_2.log_metric('ROC AUC Score', AUCs['Logistic regression using Distance and Angle'])
-
+    return clf_1, clf_2, clf_3
 
 if __name__ == "__main__":
     runRegression()
