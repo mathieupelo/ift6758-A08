@@ -13,7 +13,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import classification_report, roc_auc_score
 
 from feature_engineering import preprocessing
-from Basic_model import Centiles_plot, ROC_plot, cumulative_centiles_plot, calibrate_display
+from Plots import Centiles_plot, ROC_plot, cumulative_centiles_plot, calibrate_display
 
 
 def RunHistGB():
@@ -58,11 +58,18 @@ def RunHistGB():
     print(f"ROC AUC Score: {roc_auc}")
     experiment.log_metric('ROC AUC Score', roc_auc)
 
-    Centiles_plot(pd.Series(y_val), pd.Series(y_pred_proba[:,1]))
-    ROC_plot(y_val, y_pred_proba[:,1])
-    cumulative_centiles_plot(pd.Series(y_val), pd.Series(y_pred_proba[:,1]))
-    calibrate_display(clf, X_val, y_val, n_bin=10)
+    ######################
+    y_probs = clf.predict_proba(X_val)
 
+    y_test = pd.Series(y_val)
+    CLFS = [[[clf], X_val, 'HistGB']]
+    Ys = [["HistGB", y_probs[:, 1], "blue", True]]
+
+    ROC_plot(y_test, Ys)
+    Centiles_plot(y_test, Ys)
+    cumulative_centiles_plot(y_test, Ys)
+    calibrate_display(CLFS, y_test)
+    #####################
 
     # Dump modele
     with open("../data/histGBmodel.pickle", "wb") as outfile:

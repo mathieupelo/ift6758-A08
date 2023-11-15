@@ -19,7 +19,7 @@ from feature_engineering import preprocessing
 from Plots import Centiles_plot, ROC_plot, cumulative_centiles_plot, calibrate_display
 
 
-def runBoosted_Logistic_reg():
+def runBoosted_Logistic_reg(isRandomizedSearchCV):
 
     df = pd.read_csv('../data/derivatives/train_data.csv')
     X, y = preprocessing (df, 'is_goal')
@@ -45,17 +45,21 @@ def runBoosted_Logistic_reg():
 
     # Random Cross Validation
 
-    random_sch = RandomizedSearchCV(xgb_model, param_grid, refit=True, n_iter=10, n_jobs=-1)
+    if isRandomizedSearchCV:
+        random_sch = RandomizedSearchCV(xgb_model, param_grid, refit=True, n_iter=10, n_jobs=-1)
+        # Best Hyperparameters: {'n_estimators': 50, 'max_depth': 3, 'learning_rate': 0.3}
+        # Get the best hyperparameters
+        best_params = random_sch.best_params_
+        print("Best Hyperparameters:", best_params)
 
+        # Make predictions with the best model
+        best_model = random_sch.best_estimator_
+
+    else:
+        random_sch = XGBClassifier(base_estimator = clf, random_state=42, n_estimators = 50, max_depth = 3, learning_rate = 0.3)
+        best_model = random_sch
     # Train the XGBoost model
     random_sch.fit(X_train, y_train)
-
-    # Get the best hyperparameters
-    best_params = random_sch.best_params_
-    print("Best Hyperparameters:", best_params)
-
-    # Make predictions with the best model
-    best_model = random_sch.best_estimator_
 
     y_prob = best_model.predict_proba(X_test)
 
@@ -89,4 +93,4 @@ def runBoosted_Logistic_reg():
     return best_model
 
 if __name__ == "__main__":
-    runBoosted_Logistic_reg()
+    runBoosted_Logistic_reg(False)
