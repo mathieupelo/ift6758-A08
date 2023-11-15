@@ -40,12 +40,12 @@ def RunANN():
     np.random.seed(seed)
     random.seed(seed)
     
-    #experiment = Experiment(
-    #    api_key=os.environ.get('COMET_API_KEY'),
-    #    project_name='Milestone_2',
-    #    workspace='me-pic',
-    #)
-    #experiment.set_name('ANN')
+    experiment = Experiment(
+        api_key=os.environ.get('COMET_API_KEY'),
+        project_name='Milestone_2',
+        workspace='me-pic',
+    )
+    experiment.set_name('ANN')
     
     df = pd.read_csv('../data/derivatives/train_data.csv')
     X, y = preprocessing(df, 'is_goal')
@@ -97,7 +97,7 @@ def RunANN():
     epochs = 500
     momentum = 0.9
     params = {"num_epochs": epochs, "learning_rate": learning_rate, "momentum": momentum}
-    #experiment.log_parameters(params) # Log hyperparameters
+    experiment.log_parameters(params) # Log hyperparameters
 
     # Définir l'optimiseur
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum) # Fixed momentum
@@ -141,11 +141,11 @@ def RunANN():
             valid_loss_values.append(valid_loss.detach().numpy())
 
         # Log metric for each epoch
-        #experiment.log_metrics({'Training Loss': loss, 'Training Balanced Accuracy': accuracy, 'Validation Loss': valid_loss, 'Validation Balanced Accuracy': valid_accuracy}, epoch=epoch)
+        experiment.log_metrics({'Training Loss': loss, 'Training Balanced Accuracy': accuracy, 'Validation Loss': valid_loss, 'Validation Balanced Accuracy': valid_accuracy}, epoch=epoch)
 
     # Log model
     print('Loggin the model...')
-    #log_model(experiment, model, model_name='ANN')
+    log_model(experiment, model, model_name='ANN')
 
     print('Computing metrics on final trained model...')
     with torch.inference_mode():
@@ -154,7 +154,7 @@ def RunANN():
 
     roc_auc = roc_auc_score(y_val, valid_pred) 
     print(f"ROC AUC Score: {roc_auc}")
-    #experiment.log_metric('ROC AUC Score', roc_auc)
+    experiment.log_metric('ROC AUC Score', roc_auc)
 
     print("Plotting performance...")
     Centiles_plot(pd.Series(y_val), pd.Series(valid_pred))
@@ -165,5 +165,5 @@ def RunANN():
     disp = CalibrationDisplay(prob_true, prob_pred, valid_pred)
     plt.savefig(f"../figures/calibration_plot_ANN.png")
 
-    #experiment.end()
+    experiment.end()
 
