@@ -395,8 +395,9 @@ def preprocessing(df: pd.DataFrame, target: str):
 
     # Supprime les lignes avec des NaN
     df = df.dropna()
-
     df = df.drop(columns=['gameId'])
+    if 'index' in df.columns:
+        df = df.drop(columns=['index'])
 
     # Colonnes One-Hot Encoding
     cols_to_encode = ['shotCategory', 'last_event_type']
