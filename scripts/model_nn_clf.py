@@ -157,9 +157,9 @@ def RunANN():
     experiment.log_metric('ROC AUC Score', roc_auc)
 
     print("Plotting performance...")
-    Centiles_plot(pd.Series(y_val), pd.Series(valid_pred), 'ANN')
-    ROC_plot(y_val, valid_pred, 'ANN')
-    cumulative_centiles_plot(pd.Series(y_val), pd.Series(valid_pred), 'ANN')
+    Centiles_plot(pd.Series(y_val), pd.Series(valid_pred))
+    ROC_plot(y_val, valid_pred)
+    cumulative_centiles_plot(pd.Series(y_val), pd.Series(valid_pred))
     # Calibration Display curve
     prob_true, prob_pred = calibration_curve(y_val, valid_pred, n_bins=10)
     disp = CalibrationDisplay(prob_true, prob_pred, valid_pred)
