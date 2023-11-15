@@ -360,8 +360,8 @@ def fusion_features(engineering1, engineering2):
     if len(engineering1) != len(engineering2):
         raise ValueError("Les DataFrames doivent avoir le même nombre de lignes")
     
-    engineering2['distance_shot'] = engineering1['distance_goal']
-    engineering2['angle_shot'] = engineering1['angle_goal']
+    #engineering2['distance_shot'] = engineering1['distance_goal']
+    #engineering2['angle_shot'] = engineering1['angle_goal']
     engineering2['is_goal'] = engineering1['is_goal']
     engineering2['empty_net'] = engineering1['empty_goal']  
         
