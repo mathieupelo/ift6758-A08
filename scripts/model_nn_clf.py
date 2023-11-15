@@ -53,6 +53,7 @@ def RunANN():
     # Convertir en tenseur
     y = torch.from_numpy(y).type(torch.float)
     X = torch.from_numpy(X.values).type(torch.float)
+    nb_features = X.shape[1]
     # Combiner X et y dans un Dataset
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=seed, shuffle=True)
 
@@ -64,7 +65,7 @@ def RunANN():
     class ANNModel(nn.Module):
         def __init__(self):
             super(ANNModel, self).__init__()
-            self.layer_1 = nn.Linear(30, 64)
+            self.layer_1 = nn.Linear(nb_features, 64)
             self.layer_2 = nn.Linear(64, 128)
             self.layer_3 = nn.Linear(128, 96)
             self.layer_4 = nn.Linear(96, 32)
