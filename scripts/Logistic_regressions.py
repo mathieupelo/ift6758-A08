@@ -57,7 +57,7 @@ def runRegression():
     # Inputs of plots functions
 
     Y=[["Distance", y1_prob[:,1], "blue", True]]
-    CLF = [[[clf_1], X1_val, 'Logistic_reg_Distance']]
+    CLF = [[[clf_1], X1_val, 'Distance']]
 
     AUC = ROC_plot(y_val, Y)
     Centiles_plot(y_val, Y)
@@ -74,7 +74,7 @@ def runRegression():
 
     experiment.set_name('Logistic_reg_dist')
 
-    experiment.log_metric('ROC AUC Score', AUC['Logistic regression using Distance'])
+    experiment.log_metric('ROC AUC Score', AUC['Distance'])
 
     # Dump modele
     with open("../models/Logistic_reg_distance.pickle", "wb") as outfile:
@@ -145,7 +145,7 @@ def runRegression():
     cumulative_centiles_plot(y_val, Ys)
     calibrate_display(CLFS, y_val, n_bin = 40)
 
-    experiment_1.log_metric('ROC AUC Score', AUCs['Logistic regression using Angle'])
+    experiment_1.log_metric('ROC AUC Score', AUCs['Angle'])
 
     experiment_2 = Experiment(
         api_key=os.environ.get('COMET_API_KEY'),
@@ -155,7 +155,7 @@ def runRegression():
 
     experiment_2.set_name('Logistic_reg_dist_angle')
     experiment_2.log_model('Logistic_reg_dist-angle', '../models/Logistic_reg_dist-angle.pickle')
-    experiment_2.log_metric('ROC AUC Score', AUCs['Logistic regression using Distance and Angle'])
+    experiment_2.log_metric('ROC AUC Score', AUCs['Distance et Angle'])
     return clf_1, clf_2, clf_3
 
 if __name__ == "__main__":
