@@ -171,10 +171,10 @@ def rename_feature(feature: str):
     label_name: str
         Nom à utiliser pour les figures
     """
-    if feature == 'distance_goal':
+    if feature == 'shot_distance':
         label_name = 'Distance du filet (pieds)'
         feature_name = 'distance'
-    elif feature == 'angle_goal':
+    elif feature == 'shot_angle':
         label_name = 'Angle du tir (degrés)'
         feature_name = "angle"
     else:
@@ -261,7 +261,7 @@ def hist_2d_shots(data: pd.DataFrame, x: str, y: str, hue: str, save: bool):
 
     plt.figure(figsize=(6, 4))
     plt.set_cmap("Greens")
-    sns.jointplot(data=data, x='distance_goal', y='angle_goal')
+    sns.jointplot(data=data, x='shot_distance', y='shot_angle')
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     
@@ -300,7 +300,7 @@ def goal_rate(data: pd.DataFrame, feature: str, lower_bound: int=0, upper_bound:
     
     # Définir les xticks
     bins_label = [f"[{bins[i]}; {bins[i+1]}[" for i in range(len(bins[:-1]))]
-    if feature == 'angle_goal':
+    if feature == 'shot_angle':
         bins_label.append('[85-90]')
 
     # Plot le taux de buts selon la `feature` donnée
@@ -344,15 +344,15 @@ def hist_goals_dist(data: pd.DataFrame, transform: str, save: bool):
     df = df[df['is_goal']==1]
 
     # Regrouper les distance en bins. Par défaut, 10 bins de même largeur
-    hist, bins = np.histogram(df['distance_goal'], bins=50)
+    hist, bins = np.histogram(df['shot_distance'], bins=50)
 
     # Plot les histogrammes selon si un tir a mené à un but ou non
     plt.figure(figsize=(6, 4))
-    plt.hist(df[df['empty_goal']==0]['distance_goal'], bins=bins, label='Filet non-vide')
-    plt.hist(df[df['empty_goal']==1]['distance_goal'], alpha=0.6, bins=bins, label='Filet vide')
+    plt.hist(df[df['empty_goal']==0]['shot_distance'], bins=bins, label='Filet non-vide')
+    plt.hist(df[df['empty_goal']==1]['shot_distance'], alpha=0.6, bins=bins, label='Filet vide')
 
     # Étiqueté l'axe x
-    feature_name, xlabel = rename_feature('distance_goal')
+    feature_name, xlabel = rename_feature('shot_distance')
     plt.xlabel(xlabel)
 
     # Étiqueté l'axe y

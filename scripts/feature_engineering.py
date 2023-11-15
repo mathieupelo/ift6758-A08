@@ -127,9 +127,9 @@ def create_features1(data: pd.DataFrame, pattern: str, outname: str):
 
 
     # Créer la variable distance_goal
-    new_data['distance_goal'] = distance_goal(data['coord_x'], data['coord_y'])
+    new_data['shot_distance'] = distance_goal(data['coord_x'], data['coord_y'])
     # Créer la variable angle_goal
-    new_data['angle_goal'] = angle_goal(data['coord_x'], data['coord_y'])
+    new_data['shot_angle'] = angle_goal(data['coord_x'], data['coord_y'])
     # Créer la variable is_goal
     new_data['is_goal'] = is_goal(data)
     # Créer la variable empty_goal
@@ -138,8 +138,8 @@ def create_features1(data: pd.DataFrame, pattern: str, outname: str):
     new_data['empty_goal'].fillna(0, inplace=True)
     #new_data.dropna(inplace=True)
     new_data['is_goal'].fillna(0, inplace=True)
-    new_data['angle_goal'].fillna(0, inplace=True)
-    new_data['distance_goal'].fillna(0, inplace=True)
+    new_data['shot_angle'].fillna(0, inplace=True)
+    new_data['shot_distance'].fillna(0, inplace=True)
 
     new_data.to_csv(f'../data/derivatives/{outname}', index=False)
     

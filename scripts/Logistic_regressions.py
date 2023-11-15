@@ -18,15 +18,15 @@ def runRegression():
     
     data = pd.read_csv('../data/derivatives/features_train1.csv')
     
-    X = data[['distance_goal','angle_goal']]
+    X = data[['shot_distance','shot_angle']]
     y = data['is_goal']
 
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Logistic regression trained on 'distance' feature
 
-    X1_train = X_train['distance_goal']
-    X1_val = X_val['distance_goal']
+    X1_train = X_train['shot_distance']
+    X1_val = X_val['shot_distance']
 
     # Reshape to the input shape of LogisticRegrssion() model of sklearn
 
@@ -87,8 +87,8 @@ def runRegression():
 
     # Logistic regression trained on 'angle' feature
 
-    X2_train = X_train['angle_goal']
-    X2_val = X_val['angle_goal']
+    X2_train = X_train['shot_angle']
+    X2_val = X_val['shot_angle']
 
     X2_train = X2_train.values.reshape(-1,1)
     X2_val = X2_val.values.reshape(-1,1)
