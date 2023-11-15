@@ -13,8 +13,8 @@ https://www.comet.com/docs/v2/integrations/ml-frameworks/pytorch/
 """
 
 
-#from comet_ml import Experiment
-#from comet_ml.integration.pytorch import log_model
+from comet_ml import Experiment
+from comet_ml.integration.pytorch import log_model
 # Pytorch
 import torch
 from torch import nn
