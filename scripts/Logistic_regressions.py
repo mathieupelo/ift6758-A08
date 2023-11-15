@@ -56,7 +56,7 @@ def runRegression():
 
     # Inputs of plots functions
 
-    Y=[["Logistic regression using Distance", y1_prob[:,1], "blue", True]]
+    Y=[["Distance", y1_prob[:,1], "blue", True]]
     CLF = [[[clf_1], X1_val, 'Logistic_reg_Distance']]
 
     AUC = ROC_plot(y_val, Y)
@@ -101,7 +101,8 @@ def runRegression():
 
     experiment_1.set_name('Logistic_reg_angle')
 
-    
+    clf_1 = LogisticRegression().fit(X1_train, y_train)
+    y1_prob =  clf_1.predict_proba(X2_val)
 
     clf_2 = LogisticRegression().fit(X2_train, y_train)
     y2_prob = clf_2.predict_proba(X2_val)
@@ -127,15 +128,15 @@ def runRegression():
 
     # Inputs for multiple curve's plots functions
 
-    CLFS = [[[clf_1], X1_val, 'Logistic_reg_Distance'], 
-        [[clf_2], X2_val, 'Logistic_reg_Angle'], 
-        [[clf_3], X_val, 'Logistic_reg_Distance-Angle'], 
+    CLFS = [[[clf_1], X1_val, 'Distance'], 
+        [[clf_2], X2_val, 'Angle'], 
+        [[clf_3], X_val, 'Distance-Angle'], 
         [[y_val, y_uniform_sampled], X_val, 'Ligne de base aléatoire']
         ]
     
-    Ys=[["Logistic regression using Distance", y1_prob[:,1], "blue", False],
-        ["Logistic regression using Angle", y2_prob[:,1], "orange", False],
-        ["Logistic regression using Distance and Angle", y3_prob[:,1], "green", False],
+    Ys=[["Distance", y1_prob[:,1], "blue", False],
+        ["Angle", y2_prob[:,1], "orange", False],
+        ["Distance et Angle", y3_prob[:,1], "green", False],
         ["Ligne de base aléatoire", y_uniform_sampled, "red", True]
         ]
     
