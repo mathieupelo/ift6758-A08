@@ -27,7 +27,7 @@ def RunHistGB():
     print("Loading data...")
     df = pd.read_csv('../data/derivatives/train_data.csv')
     X, y = preprocessing (df, 'is_goal')
-    CATEGORICAL_FEATURES = ["prd", "noGoalie", "rebond", "shotCategory_Backhand", "shotCategory_Deflected", "shotCategory_Slap Shot", "shotCategory_Snap Shot", "shotCategory_Tip-In", "shotCategory_Wrap-around", "shotCategory_Wrist Shot", "last_event_type_BLOCKED_SHOT", "last_event_type_FACEOFF", "last_event_type_GIVEAWAY", "last_event_type_GOAL", "last_event_type_HIT", "last_event_type_MISSED_SHOT", "last_event_type_PENALTY", "last_event_type_SHOT", "last_event_type_TAKEAWAY"]
+    CATEGORICAL_FEATURES = ["prd", "empty_net", "rebond", "shotCategory_Backhand", "shotCategory_Deflected", "shotCategory_Slap Shot", "shotCategory_Snap Shot", "shotCategory_Tip-In", "shotCategory_Wrap-around", "shotCategory_Wrist Shot", "last_event_type_BLOCKED_SHOT", "last_event_type_FACEOFF", "last_event_type_GIVEAWAY", "last_event_type_GOAL", "last_event_type_HIT", "last_event_type_MISSED_SHOT", "last_event_type_PENALTY", "last_event_type_SHOT", "last_event_type_TAKEAWAY"]
 
     # Recherche des hyperparamètre sur subset de 10% des données (Le calcul est très couteux si on entraine sur toute la base de données 
     # et pour toutes les combinaisons d'hyperparamètres possibles vu la complexité du modèle)
