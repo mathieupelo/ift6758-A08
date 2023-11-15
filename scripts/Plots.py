@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import RocCurveDisplay , roc_curve, auc
 from sklearn.calibration import CalibrationDisplay
@@ -23,10 +22,10 @@ def ROC_plot (y, Y):
         )
         fpr, tpr, _ = roc_curve(np.array(y), pred, pos_label=1)
         AUC[model]= auc(fpr, tpr) 
-    print ( f'AUC metric : {AUC}')
-    ax.set_xlabel("False Positive Rate")
-    ax.set_ylabel("True Positive Rate")
-    ax.set_title("But-vs-NBut ROC curves")
+    print ( f'Métrique AUC : {AUC}')
+    ax.set_xlabel("Taux de faux positifs")
+    ax.set_ylabel("Taux de vrais positifs")
+    ax.set_title("Courbes ROC But vs Non-But ")
     ax.legend()
     plt.savefig(f"../figures/ROC_curve_{[model for model in curves]}.png")
     plt.show()
@@ -53,9 +52,9 @@ def Centiles_plot(y, Y):
             taux_buts.append(goal_rate)
 
         ax.plot(np.arange(0, 100, 5), taux_buts, linestyle='-', label = model)
-    ax.set_xlabel("Centile de la Probabilité de Tir")
-    ax.set_ylabel("Taux de Buts")
-    ax.set_title("Taux de Buts en fonction du Centile de Probabilité de Tir")
+    ax.set_xlabel("Centile de la probabilité de Tir")
+    ax.set_ylabel("Taux de buts")
+    ax.set_title("Taux de buts en fonction du centile de probabilité de tir")
     ax.grid(True)
     ax.set_xlim(100, 0)
     ax.set_xticks(np.arange(0, 101, 10))
@@ -75,9 +74,9 @@ def cumulative_centiles_plot(y, Y):
         reverse_prob[::-1].sort()
         cum_percentile = np.cumsum(reverse_prob) * 100
         ax.plot(x_axis, cum_percentile / sum(pred), label = model)
-    ax.set_xlabel("Centile de la Probabilité de Tir")
+    ax.set_xlabel("Centile de la probabilité de Tir")
     ax.set_ylabel("Proportion")
-    ax.set_title(" cumulatif des buts en %")
+    ax.set_title(" Cumulatif des buts (en %)")
     ax.grid(True)
     ax.set_xlim(100, 0)
     ax.set_xticks(np.arange(0, 101, 10))
@@ -87,7 +86,7 @@ def cumulative_centiles_plot(y, Y):
     plt.show()
 
 
-def calibrate_display(classifier, y_val, n_bin = 40):
+def calibrate_display(classifier, y_val, n_bin = 50):
     fig, ax = plt.subplots()
     curves = []
     for model, X, name in classifier: 
@@ -99,6 +98,9 @@ def calibrate_display(classifier, y_val, n_bin = 40):
         else :
             CalibrationDisplay.from_predictions(model[0], model[1], n_bins= n_bin, name= name, ax= ax)
         
+    ax.set_xlabel("Probabilité moyenne prédite (Classe 1 )")
+    ax.set_ylabel("Proportion des positifs (Classe 1 )")
+    ax.set_title("Diagramme de fiabilité : Courbes de calibration")
     ax.legend()
     plt.savefig(f"../figures/calibrate_display_{curves}.png")
     plt.show()
