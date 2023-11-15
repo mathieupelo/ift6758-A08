@@ -1,3 +1,5 @@
+from comet_ml import *
+import pickle
 import sys
 import os
 from comet_ml import Experiment
@@ -16,6 +18,7 @@ sys.path.append(os.path.join(parent_dir, 'scripts'))
 
 from Plots import Centiles_plot, ROC_plot, cumulative_centiles_plot, calibrate_display
 from feature_engineering import preprocessing
+
 
 
 def visualisation(best_model, y_probs, y_test, X_test):
@@ -71,19 +74,16 @@ class CometExperiment:
         X_train, X_test, y_train, y_test = self.read_data()
 
         model = RandomForestClassifier()
-        #randomized_search = RandomizedSearchCV(model, param_dist, n_iter=n_iter, cv=cv, scoring='accuracy',
-        #                                       random_state=42)
+        randomized_search = RandomizedSearchCV(model, param_dist, n_iter=n_iter, cv=cv, scoring='accuracy',
+                                               random_state=42)
 
-
-        best_model = model
-        randomized_search = best_model
         with experiment.train():
             randomized_search.fit(X_train, y_train)
-            #best_model = randomized_search.best_estimator_
+            best_model = randomized_search.best_estimator_
 
             # Log les meilleurs hyperparamètres et la meilleure performance
-            #experiment.log_parameters(randomized_search.best_params_)
-            #experiment.log_metric("best_score", randomized_search.best_score_)
+            experiment.log_parameters(randomized_search.best_params_)
+            experiment.log_metric("best_score", randomized_search.best_score_)
 
             y_probs = best_model.predict_proba(X_test)
             # Compute the mertrics
@@ -103,12 +103,21 @@ class CometExperiment:
             # Log metrics to comet
             experiment.log_metrics(metrics)
 
-        experiment.log_model(name="Random Forest", file_or_folder='../notebooks/Random_Forest_model.ipynb')
+
+        with open("../data/Random_Forest_model.pickle", "wb") as outfile:
+            pickle.dump(model, outfile)
+            outfile.close()
+
+        experiment.log_model('Random Forest', '../data/Random_Forest_model.pickle')
         experiment.end()
 
         y_test = pd.Series(y_test)
 
         visualisation(best_model, y_probs, y_test, X_test)
+
+
+
+
         return model
 
 
@@ -157,4 +166,7 @@ def runRandomForestModelClassifier():
 
     # Pass in the model and it's name
     model = project.run_experiment(param_grid, "Random Forest")
+
+
+
     return model

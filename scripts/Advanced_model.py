@@ -4,7 +4,7 @@ from sklearn.model_selection import GridSearchCV
 from comet_ml import *
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
-from scripts.Plots import *
+from Plots import *
 import feature_engineering
 
 def xgboost(isGridSearch):
