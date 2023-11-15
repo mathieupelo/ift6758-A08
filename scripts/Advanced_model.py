@@ -1,7 +1,9 @@
+import os
 import pickle
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
-from comet_ml import *
+from comet_ml import Experiment
+import json
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 from Plots import *
@@ -63,19 +65,19 @@ def xgboost(isGridSearch):
         CLFS = [[[xgboost_classifier], X_test_top, 'XGBoost Feature Selection']]
         Ys = [["XGBoost Feature Selection", y_probs[:, 1], "blue", True]]
 
-        ROC_plot(y_test, Ys)
+        AUC = ROC_plot(y_test, Ys)
         Centiles_plot(y_test, Ys)
         cumulative_centiles_plot(y_test, Ys)
         calibrate_display(CLFS, y_test)
 
 
-        return xgboost_classifier
+        return xgboost_classifier, AUC
 
 
     # 1 .
     data = pd.read_csv('../data/derivatives/train_data.csv')
     experiment = Experiment(
-        api_key="Bgx9192SVK3nzJNLQcV5nneQS",
+        api_key=os.environ.get('COMET_API_KEY'),
         project_name="milestone-2",
         workspace="me-pic"
     )
@@ -97,12 +99,29 @@ def xgboost(isGridSearch):
     CLFS = [[[xgboost_classifier], X_test, 'XGBoost']]
     Ys = [["XGBoost", y_probs[:, 1], "blue", True]]
 
-    ROC_plot(y_test, Ys)
+    AUC = ROC_plot(y_test, Ys)
+    experiment.log_metric('ROC AUC Score', AUC[list(AUC.keys())[0]])
     Centiles_plot(y_test, Ys)
     cumulative_centiles_plot(y_test, Ys)
     calibrate_display(CLFS, y_test)
 
+    # Dump modele
+    #with open("../models/xgboost_basic.json", "wb") as outfile:
+    #    json.dump(xgboost_classifier, outfile, indent=4)
+    #    outfile.close()
+
+    xgboost_classifier.save_model('../models/xgboost_basic.pickle')
+    experiment.log_model('', '../models/xgboost_basic.pickle')
+    experiment.end()
+
     # 2.
+    experiment_1 = Experiment(
+        api_key=os.environ.get('COMET_API_KEY'),
+        project_name="milestone-2",
+        workspace="me-pic"
+    )
+    experiment_1.set_name('XGBoost_search')
+
     x2, y2 = feature_engineering.preprocessing(data, "is_goal")
     X2_train, X2_test, y2_train, y2_test = train_test_split(x2, y2, test_size=0.2)
     xgboost_classifier2 = xgb.XGBClassifier()
@@ -119,19 +138,34 @@ def xgboost(isGridSearch):
         CLFS = [[[best_xgboost_classifier], X2_test, 'Best XGBoost GridSearch']]
         Ys = [["Best XGBoost GridSearch", y_probs[:, 1], "blue", True]]
 
-        ROC_plot(y2_test, Ys)
+        AUC_1 = ROC_plot(y2_test, Ys)
+        experiment_1.log_metric('ROC AUC Score', AUC_1[list(AUC_1.keys())[0]])
         Centiles_plot(y2_test, Ys)
         cumulative_centiles_plot(y2_test, Ys)
         calibrate_display(CLFS, y2_test)
 
-        experiment.log_parameter("learning_rate", best_xgboost_classifier.learning_rate)
-        experiment.log_parameter("max_depth", best_xgboost_classifier.max_depth)
-        experiment.log_parameter("n_estimator", best_xgboost_classifier.n_estimators)
+        experiment_1.log_parameter("learning_rate", best_xgboost_classifier.learning_rate)
+        experiment_1.log_parameter("max_depth", best_xgboost_classifier.max_depth)
+        experiment_1.log_parameter("n_estimator", best_xgboost_classifier.n_estimators)
         new_best_xgboost_classifier = xgb.XGBClassifier(learning_rate=best_xgboost_classifier.learning_rate, max_depth=best_xgboost_classifier.max_depth, n_estimators=best_xgboost_classifier.n_estimators)
     else:
         new_best_xgboost_classifier = xgb.XGBClassifier(learning_rate=0.1, max_depth=5, n_estimators=200)
 
+    #with open("../models/xgboost_search.json", "wb") as outfile:
+    #    json.dump(new_best_xgboost_classifier, outfile)
+    #    outfile.close()
+
+    new_best_xgboost_classifier.save_model('../models/xgboost_search.pickle')
+    experiment_1.log_model('', '../models/xgboost_search.pickle')
+    experiment_1.end()
     # Grid search
+    experiment_2 = Experiment(
+        api_key=os.environ.get('COMET_API_KEY'),
+        project_name="milestone-2",
+        workspace="me-pic"
+    )
+    experiment_2.set_name('XGBoost_feature_selection')
+
     x3, y3 = feature_engineering.preprocessing(data, "is_goal")
     X3_train, X3_test, y3_train, y3_test = train_test_split(x3, y3, test_size=0.2)
 
@@ -139,18 +173,19 @@ def xgboost(isGridSearch):
     new_best_xgboost_classifier.fit(X3_train, y3_train)
     
     # 3. Feature
-    featureSelectionXgboost = featureSelection(new_best_xgboost_classifier, y3_test, X3_train, y3_train, X3_test)
+    featureSelectionXgboost, AUC2 = featureSelection(new_best_xgboost_classifier, y3_test, X3_train, y3_train, X3_test)
+    experiment_2.log_metric('ROC AUC Score', AUC2[list(AUC2.keys())[0]])
 
     # Dump modele
-    with open("../data/XGBmodel.pickle", "wb") as outfile:
+    with open("../data/xgboost_feature_selection.pickle", "wb") as outfile:
         pickle.dump(featureSelectionXgboost, outfile)
         outfile.close()
 
-    experiment.log_model('XGBoost', '../data/XGBmodel.pickle')
-    experiment.end()
+    experiment_2.log_model('XGBoost', '../data/xgboost_feature_selection.pickle')
+    experiment_2.end()
 
     return featureSelectionXgboost
 
 #
 if __name__ == "__main__":
-    xgboost(False)
+    xgboost(True)
