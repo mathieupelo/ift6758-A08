@@ -282,7 +282,7 @@ def calculate_skater_count(power_play_status, home_team_name, away_team_name):
 def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
   
     temp_data = {
-        'gameId': [], 'coord_x': [], 'coord_y': [],'shotCategory': [],'goalFlag': [],
+        'gameId': [], 'coord_x': [], 'coord_y': [],'shotCategory': [],
         'last_event_type': [], 'last_event_x': [], 'last_event_y': [],
         'time_since_last_event': [], 'distance_from_last_event': [],
         'power_play_time_elapsed': [], 'home_team_skater_count': [],
@@ -317,7 +317,7 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
             temp_data['shotCategory'].append(single_event['result'].get('secondaryType', pd.NA))
             temp_data['coord_x'].append(single_event['coordinates'].get('x', pd.NA))
             temp_data['coord_y'].append(single_event['coordinates'].get('y', pd.NA))
-            temp_data['goalFlag'].append(evt_type == "GOAL")
+
                         
             prev_event_data = find_previous_event(play_data, event_index, current_period, current_period_time)
 
@@ -351,6 +351,7 @@ def transformEventData(df: pd.DataFrame) -> pd.DataFrame:
             temp_data['home_team_skater_count'].append(skater_count[home_team_name])
             temp_data['away_team_skater_count'].append(skater_count[away_team_name])
             
+    print(temp_data)
     output_df = pd.DataFrame(temp_data)
     return output_df
 
@@ -420,6 +421,7 @@ def preprocessing(df: pd.DataFrame, target: str):
         'game_seconds', 'shot_distance', 'shot_angle', 
         'changement_angle_tir', 'vitesse', 'power_play_time_elapsed', 
         'home_team_skater_count', 'away_team_skater_count']
+    
     features = X[cols_to_standardize]
     scaler = StandardScaler().fit(features.values)
     features = scaler.transform(features.values)
