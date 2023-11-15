@@ -102,7 +102,7 @@ def runRegression():
     experiment_1.set_name('Logistic_reg_angle')
 
     clf_1 = LogisticRegression().fit(X1_train, y_train)
-    y1_prob =  clf_1.predict_proba(X2_val)
+    y1_prob =  clf_1.predict_proba(X1_val)
 
     clf_2 = LogisticRegression().fit(X2_train, y_train)
     y2_prob = clf_2.predict_proba(X2_val)
