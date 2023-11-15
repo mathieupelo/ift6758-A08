@@ -26,7 +26,7 @@ def RunHistGB():
 
     print("Loading data...")
     df = pd.read_csv('../data/derivatives/train_data.csv')
-    X, y = preprocessing (df, 'goalFlag')
+    X, y = preprocessing (df, 'is_goal')
     CATEGORICAL_FEATURES = ["prd", "noGoalie", "rebond", "shotCategory_Backhand", "shotCategory_Deflected", "shotCategory_Slap Shot", "shotCategory_Snap Shot", "shotCategory_Tip-In", "shotCategory_Wrap-around", "shotCategory_Wrist Shot", "last_event_type_BLOCKED_SHOT", "last_event_type_FACEOFF", "last_event_type_GIVEAWAY", "last_event_type_GOAL", "last_event_type_HIT", "last_event_type_MISSED_SHOT", "last_event_type_PENALTY", "last_event_type_SHOT", "last_event_type_TAKEAWAY"]
 
     # Recherche des hyperparamètre sur subset de 10% des données (Le calcul est très couteux si on entraine sur toute la base de données 
@@ -58,10 +58,10 @@ def RunHistGB():
     print(f"ROC AUC Score: {roc_auc}")
     experiment.log_metric('ROC AUC Score', roc_auc)
 
-    Centiles_plot(pd.Series(y_val), pd.Series(y_pred_proba[:,1]), 'HistGradientBoosting')
-    ROC_plot(y_val, y_pred_proba[:,1], 'HistGradientBoosting')
-    cumulative_centiles_plot(pd.Series(y_val), pd.Series(y_pred_proba[:,1]), 'HistGradientBoosting')
-    calibrate_display(clf, X_val, y_val, n_bin=10, model='HistGradientBoosting')
+    Centiles_plot(pd.Series(y_val), pd.Series(y_pred_proba[:,1]))
+    ROC_plot(y_val, y_pred_proba[:,1])
+    cumulative_centiles_plot(pd.Series(y_val), pd.Series(y_pred_proba[:,1]))
+    calibrate_display(clf, X_val, y_val, n_bin=10)
 
 
     # Dump modele
