@@ -47,17 +47,16 @@ def RunANN():
     )
     experiment.set_name('ANN')
     
-    df = pd.read_csv('../data/derivatives/train_data.csv')
+    df = pd.read_csv('../data/derivatives/train_data.csv', index_col=False)
     X, y = preprocessing(df, 'is_goal')
-    
+
     # Convertir en tenseur
     y = torch.from_numpy(y).type(torch.float)
     X = torch.from_numpy(X.values).type(torch.float)
     nb_features = X.shape[1]
     # Combiner X et y dans un Dataset
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=seed, shuffle=True)
-
-
+    
     # Make device agnostic code
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -96,11 +95,12 @@ def RunANN():
     learning_rate = 0.01
     epochs = 500
     momentum = 0.9
-    params = {"num_epochs": epochs, "learning_rate": learning_rate, "momentum": momentum}
+    weight_decay=0.01
+    params = {"num_epochs": epochs, "learning_rate": learning_rate, "momentum": momentum, "L2": weight_decay}
     experiment.log_parameters(params) # Log hyperparameters
 
     # Définir l'optimiseur
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum) # Fixed momentum
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum, weight_decay=weight_decay) # Fixed momentum
 
     # Envoyer les données sur le device
     X_train, X_val = X_train.to(device), X_val.to(device)
@@ -115,10 +115,10 @@ def RunANN():
         # Forward pass
         y_logits = model(X_train).squeeze()
         y_pred = torch.round(torch.sigmoid(y_logits))
-    
+
         # Calculer la perte
         loss = loss_function(y_logits, y_train)
-        accuracy = roc_auc_score(y_pred.detach().numpy(), y_train.detach().numpy())
+        accuracy = roc_auc_score(y_train.detach().numpy(), y_pred.detach().numpy())
 
         # Backward pass
         optimizer.zero_grad()
@@ -132,7 +132,7 @@ def RunANN():
             valid_pred = torch.round(torch.sigmoid(valid_logits))
 
             valid_loss = loss_function(valid_logits, y_val)
-            valid_accuracy = roc_auc_score(valid_pred.detach().numpy(), y_val.detach().numpy())
+            valid_accuracy = roc_auc_score(y_val.detach().numpy(), valid_pred.detach().numpy())
 
         if epoch % 10 == 0:
             print(f"Epoch: {epoch} | Training Loss: {loss:.5f}, Training Balanced Accuracy: {accuracy:.2f} | Validation Loss: {valid_loss:.5f}, Validation Balanced Accuracy: {valid_accuracy:.2f}")
@@ -160,8 +160,8 @@ def RunANN():
     Centiles_plot(pd.Series(y_val), pd.Series(valid_pred))
     ROC_plot(y_val, valid_pred)
     cumulative_centiles_plot(pd.Series(y_val), pd.Series(valid_pred))
-    # Calibration Display curve
-    prob_true, prob_pred = calibration_curve(y_val, valid_pred, n_bins=10)
+    # Calibration Display curve (DO NOT CHANGE THOSE LINES !!!!)
+    prob_true, prob_pred = calibration_curve(y_val, valid_pred, n_bins=40)
     disp = CalibrationDisplay(prob_true, prob_pred, valid_pred)
     plt.savefig(f"../figures/calibration_plot_ANN.png")
 
