@@ -93,7 +93,6 @@ def xgboost(isGridSearch):
     xgboost_classifier.fit(X_train, y_train)
 
     #y_pred_proba = xgboost_classifier.predict_proba(X_test)[:, 1]
-
     y_probs = xgboost_classifier.predict_proba(X_test)
     y_test = pd.Series(y_test)
     CLFS = [[[xgboost_classifier], X_test, 'XGBoost']]
@@ -105,13 +104,9 @@ def xgboost(isGridSearch):
     cumulative_centiles_plot(y_test, Ys)
     calibrate_display(CLFS, y_test)
 
-    # Dump modele
-    #with open("../models/xgboost_basic.json", "wb") as outfile:
-    #    json.dump(xgboost_classifier, outfile, indent=4)
-    #    outfile.close()
+    xgboost_classifier.save_model('../models/xgboost_basic.pkl')
+    experiment.log_model('', '../models/xgboost_basic.pkl')
 
-    xgboost_classifier.save_model('../models/xgboost_basic.pickle')
-    experiment.log_model('', '../models/xgboost_basic.pickle')
     experiment.end()
 
     # 2.
@@ -151,12 +146,8 @@ def xgboost(isGridSearch):
     else:
         new_best_xgboost_classifier = xgb.XGBClassifier(learning_rate=0.1, max_depth=5, n_estimators=200)
 
-    #with open("../models/xgboost_search.json", "wb") as outfile:
-    #    json.dump(new_best_xgboost_classifier, outfile)
-    #    outfile.close()
-
-    new_best_xgboost_classifier.save_model('../models/xgboost_search.pickle')
-    experiment_1.log_model('', '../models/xgboost_search.pickle')
+    best_xgboost_classifier.save_model('../models/xgboost_search.pkl')
+    experiment_1.log_model('', '../models/xgboost_search.pkl')
     experiment_1.end()
     # Grid search
     experiment_2 = Experiment(
