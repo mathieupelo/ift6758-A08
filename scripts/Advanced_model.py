@@ -105,8 +105,7 @@ def xgboost(isGridSearch):
     calibrate_display(CLFS, y_test)
 
     xgboost_classifier.save_model('../models/xgboost_basic.pkl')
-    experiment.log_model('', '../models/xgboost_basic.pkl')
-
+    experiment.log_model('XGBoost_basic', '../models/xgboost_basic.pkl')
     experiment.end()
 
     # 2.
@@ -147,7 +146,7 @@ def xgboost(isGridSearch):
         new_best_xgboost_classifier = xgb.XGBClassifier(learning_rate=0.1, max_depth=5, n_estimators=200)
 
     best_xgboost_classifier.save_model('../models/xgboost_search.pkl')
-    experiment_1.log_model('', '../models/xgboost_search.pkl')
+    experiment_1.log_model('XGBoost_search', '../models/xgboost_search.pkl')
     experiment_1.end()
     # Grid search
     experiment_2 = Experiment(
