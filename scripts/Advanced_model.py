@@ -34,6 +34,10 @@ def xgboost(isGridSearch):
         print("Output the best hyperparams")
         best_params = grid_search.best_params_
         print(f"Best Hyperparameters: {best_params}")
+
+        # Decommenter la ligne de code suivante si vous voulez généré les graphes pour les hyperparamètres
+        # generateGraphsGridSearch()
+
         return grid_search
 
     def featureSelection(best_xgboost_classifier, y_test, X_train, y_train, X_test):
