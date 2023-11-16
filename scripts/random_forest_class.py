@@ -62,7 +62,7 @@ class CometExperiment:
     def run_experiment(self, param_dist, model_name, n_iter=10, cv=3):
         # Instantiate the Experiment Object from comet
         experiment = Experiment(
-            api_key=self.api_key,
+            api_key=os.environ.get('COMET_API_KEY'),
             project_name=self.project_name,
             workspace=self.workspace)
 
@@ -105,7 +105,7 @@ class CometExperiment:
 
 
         with open("../data/Random_Forest_model.pickle", "wb") as outfile:
-            pickle.dump(model, outfile)
+            pickle.dump(randomized_search, outfile)
             outfile.close()
 
         experiment.log_model('Random Forest', '../data/Random_Forest_model.pickle')
