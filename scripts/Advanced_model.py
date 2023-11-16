@@ -104,8 +104,10 @@ def xgboost(isGridSearch):
     cumulative_centiles_plot(y_test, Ys)
     calibrate_display(CLFS, y_test)
 
-    xgboost_classifier.save_model('../models/xgboost_basic.pkl')
-    experiment.log_model('XGBoost_basic', '../models/xgboost_basic.pkl')
+    with open("../models/xgboost_basic.pickle", "wb") as outfile:
+        pickle.dump(xgboost_classifier, outfile)
+        outfile.close()
+    experiment.log_model('XGBoost_basic', '../models/xgboost_basic.pickle')
     experiment.end()
 
     # 2.
@@ -145,8 +147,10 @@ def xgboost(isGridSearch):
     else:
         new_best_xgboost_classifier = xgb.XGBClassifier(learning_rate=0.1, max_depth=5, n_estimators=200)
 
-    best_xgboost_classifier.save_model('../models/xgboost_search.pkl')
-    experiment_1.log_model('XGBoost_search', '../models/xgboost_search.pkl')
+    with open("../models/xgboost_search.pickle", "wb") as outfile:
+        pickle.dump(best_xgboost_classifier, outfile)
+        outfile.close()
+    experiment_1.log_model('XGBoost_search', '../models/xgboost_search.pickle')
     experiment_1.end()
     # Grid search
     experiment_2 = Experiment(
